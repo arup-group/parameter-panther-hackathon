@@ -1,6 +1,5 @@
 <template>
-  <v-app>
-    <v-app-bar app color="primary" dark> Hello Speckle! </v-app-bar>
+  <v-app id="parameter-panther">
     <v-main>
       <router-view />
     </v-main>

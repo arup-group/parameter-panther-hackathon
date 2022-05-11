@@ -7,8 +7,28 @@
         v-model.number="limit"
         type="number"
       ></v-text-field>
-      <v-text-field label="Select" v-model="select"></v-text-field>
-      <v-text-field label="Query" v-model="query"></v-text-field>
+      <v-card-text class="pl-0"
+        >Families:
+        <v-chip
+          v-for="f in families"
+          :key="f"
+          v-model="families"
+          @input="onClose(tag)"
+          close
+          >{{ f }}
+        </v-chip>
+      </v-card-text>
+      <v-card-text class="pl-0"
+        >Types:
+        <v-chip
+          v-for="t in types"
+          :key="t"
+          v-model="types"
+          @input="onClose(tag)"
+          close
+          >{{ t }}
+        </v-chip>
+      </v-card-text>
 
       <v-btn
         elevation="2"
@@ -23,10 +43,24 @@
       Total count: {{ totalCount ? totalCount : "unknown" }}
     </p>
 
+    <v-card-title>
+      Search:
+      <v-spacer></v-spacer>
+      <v-text-field
+        v-model="search"
+        append-icon="mdi-magnify"
+        label=""
+        single-line
+        hide-details
+      ></v-text-field>
+    </v-card-title>
+
     <v-data-table
+      dense
       :headers="headers"
       :items="flatObjs"
       :items-per-page="limit"
+      :search="search"
       hide-default-footer
       class="elevation-1 my-4"
     ></v-data-table>
@@ -59,23 +93,34 @@
 import flat from "flat";
 
 export default {
-  name: "HelloWorld",
+  name: "DataTable",
   components: {},
   data() {
     return {
       url: "https://speckle.xyz/streams/0d3cb7cb52/objects/f833afec2e17457f17e7f6429a106187",
       totalCount: null,
+      families: ["None"],
+      types: ["None"],
       query:
-        '[{"field":"speckle_type","operator":"=","value":"Objects.BuiltElements.Wall:Objects.BuiltElements.Revit.RevitWall"}]',
-      select:
-        '["speckle_type","id","parameters.HOST_AREA_COMPUTED.value", "parameters.HOST_VOLUME_COMPUTED.value"]',
+        '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
+      // select:
+      //   '["speckle_type","id", "elementId", "category", "family", "type", "parameters.HOST_AREA_COMPUTED.value", "parameters.HOST_VOLUME_COMPUTED.value"]',
       cursors: [],
+      fieldsToShow: [
+        "speckle_type",
+        "id",
+        "elementId",
+        "category",
+        "family",
+        "type",
+      ],
       flatObjs: [],
       headers: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
       nextLoading: false,
+      search: "",
     };
   },
   watch: {
@@ -151,17 +196,32 @@ export default {
         flat(o.data, { safe: false })
       );
 
+      const uniqueFamilies = new Set();
+      const uniqueTypes = new Set();
+      this.flatObjs.forEach((o) => {
+        if(o.family) uniqueFamilies.add(o.family);
+        if(o.type) uniqueTypes.add(o.type);
+      });
+
+      this.families = Array.from(uniqueFamilies)
+      this.types = Array.from(uniqueTypes)
+
+
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
       this.flatObjs.forEach((o) =>
-        Object.keys(o).forEach((k) =>
-          !k.includes("__closure") ? uniqueHeaderNames.add(k) : null
+        Object.keys(o).forEach(
+          (k) =>
+            !k.includes("__closure") &&
+            (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
+              ? uniqueHeaderNames.add(k)
+              : null //clean up this filtering!
         )
       );
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
-        this.headers.push({ text: val, value: val, sortable: false })
+        this.headers.push({ text: val, value: val, sortable: true })
       );
 
       // Last, signal that we're done loading!
@@ -173,7 +233,6 @@ export default {
         query( $limit: Int, $mySelect: [String!], $myQuery: [JSONObject!]) {
           stream( id: "${streamId}" ) {
             object( id: "${objectId}" ) {
-              data
               children( 
                 limit: $limit
                 depth: 100
@@ -181,7 +240,6 @@ export default {
                 query: $myQuery
                 ${cursor ? ', cursor:"' + cursor + '"' : ""}
                 ) {
-                totalCount
                 cursor
                 objects {
                   id
