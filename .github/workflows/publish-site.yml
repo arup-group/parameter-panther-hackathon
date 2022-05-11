@@ -7,8 +7,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,6 +15,9 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    permissions:
+      id-token: write
+      contents: read 
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -25,12 +26,24 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - run: npm install
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::387698182921:role/GitHub
+          role-session-name: rolesession
+          aws-region: eu-west-1
+
+      - name: Upload files to S3
+        working-directory: dist
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          aws s3 sync --delete . s3://speckleworks-hackathon-static-pages-prod
+
+      - name: Invalidate Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ET2Q90L5T7A6B --paths /index.html 
