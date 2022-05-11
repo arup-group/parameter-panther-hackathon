@@ -1,15 +1,20 @@
 <template>
-  <hello-world />
+  <div>
+    <hello-world />
+    <renderer />
+  </div>
 </template>
 
 <script>
-  import HelloWorld from '../components/HelloWorld'
+import HelloWorld from "../components/HelloWorld";
+import Renderer from "../components/Renderer.vue";
 
-  export default {
-    name: 'HomeView',
+export default {
+  name: "HomeView",
 
-    components: {
-      HelloWorld,
-    },
-  }
+  components: {
+    HelloWorld,
+    Renderer,
+  },
+};
 </script>
