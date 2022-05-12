@@ -100,11 +100,11 @@
             <v-list flat dense class="pa-0">
               <v-list-item-group multiple v-model="activeFilters[header.value]" class="py-2">
                 <template>
-                  <v-list-item :value="item" :ripple="false" v-for="(item) in filters[header.value]" :key="`${item}`">
+                  <v-list-item :value="item" :ripple="true" v-for="(item) in filters[header.value]" :key="`${item}`">
                     <template v-slot:default="{ active, toggle }">
                       <v-list-item-action>
                         <v-checkbox :input-value="active" :true-value="item"
-                          @click="toggle" color="primary" :ripple="false" dense></v-checkbox>
+                          @click="toggle" color="primary" :ripple="true" dense></v-checkbox>
                       </v-list-item-action>
                       <v-list-item-content> 
                         <v-list-item-title v-text="item"></v-list-item-title>
