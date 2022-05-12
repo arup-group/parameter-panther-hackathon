@@ -372,7 +372,6 @@ export default {
           (value, index, self) => { return self.indexOf(value) === index }
         )
       }
-
       console.log("flatObjs:", this.flatObjs);
 
       // TODO restore previous activeFilters before add/remove item
@@ -400,16 +399,6 @@ export default {
       this.activeFilters[col] = []
     },
 
-    onClose(c) {
-      this.categories = this.arrayRemove(this.categories, c)
-    },
-
-    // Using filter method to create a remove method
-    arrayRemove(arr, value) {
-      return arr.filter(function(foo){
-        return foo != value;
-      });
-    },
     changedCategory(category){
       this.selectedCategory = category;
     }
