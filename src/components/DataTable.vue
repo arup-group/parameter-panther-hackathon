@@ -104,6 +104,8 @@
 <script>
 import flat from "flat";
 
+import { ParameterUpdater } from "@/utils/ParameterUpdater";
+
 export default {
   name: "DataTable",
   components: {},
@@ -195,6 +197,11 @@ export default {
 
       // Parse the response into.
       let res = await rawRes.json();
+      console.log("res:", res);
+      const parameterUpdater = new ParameterUpdater(streamId);
+      parameterUpdater.addObjects(res.data.stream.object.children.objects);
+      console.log("parameterUpdater:", parameterUpdater);
+      parameterUpdater.commitObjects();
 
       let obj = res.data.stream.object;
 
