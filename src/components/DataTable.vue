@@ -96,7 +96,7 @@
                     <template v-slot:default="{ active, toggle }">
                       <v-list-item-action>
                         <v-checkbox :input-value="active" :true-value="item"
-                          @click="toggle" color="primary" :ripple="false" dense></v-checkbox>
+                          @click="toggle(header.value, item)" color="primary" :ripple="false" dense></v-checkbox>
                       </v-list-item-action>
                       <v-list-item-content> 
                         <v-list-item-title v-text="item"></v-list-item-title>
@@ -117,15 +117,6 @@
             </v-list>
           </v-menu>
         </div>
-      </template>
-      <template v-slot:header="{ props: { headers } }">
-        <thead>
-          <tr>
-            <th :colspan="headers.length">
-              This is a header
-            </th>
-          </tr>
-        </thead>
       </template>
     </v-data-table>
 
@@ -197,6 +188,14 @@ export default {
       // If the limit is changed, we need to reset the query
       this.fetchChildren();
     },
+    toggleAll () {
+      this.fetchChildren();
+    },
+    clearAll () {
+      this.fetchChildren();
+    },
+
+
   },
   methods: {
     async next() {
@@ -295,7 +294,9 @@ export default {
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
-        this.headers.push({ text: val, value: val, sortable: true })
+        this.headers.push({ text: val, value: val, sortable: true, filter: value => {
+            return this.activeFilters.foo ? this.activeFilters.foo.includes(value) : true;
+          }})
       );
 
       this.initFilters();
@@ -344,9 +345,15 @@ export default {
         }, 1)
       }*/
     },
+
+    toggle (col) {
+      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
+        (value, index, self) => { return self.indexOf(value) === index }
+      )
+    },
     
     toggleAll (col) {
-      this.activeFilters[col] = this.desserts.map((d) => { return d[col] }).filter(
+      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
         (value, index, self) => { return self.indexOf(value) === index }
       )
     },
