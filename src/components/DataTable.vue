@@ -70,10 +70,13 @@
       dense
       :headers="headers"
       :items="flatObjs"
+      sort-by="family"
+      item-key="id"
       :items-per-page="limit"
       :search="search"
       hide-default-footer
       class="elevation-1 my-4"
+      show-select
     ></v-data-table>
 
     <v-btn
