@@ -14,10 +14,9 @@
           v-for="c in categories"
           :key="c"
           v-model="categories"
-          @input="onClose(tag)"
+          @input="onClose(c)"
           close=""
-          >
-          {{ c }}
+          >{{ c }}
         </v-chip>
       </v-card-text>
       <v-card-text class="pl-0"
@@ -26,7 +25,7 @@
           v-for="f in families"
           :key="f"
           v-model="families"
-          @input="onClose(tag)"
+          @input="onClose(c)"
           close
           >{{ f }}
         </v-chip>
@@ -37,7 +36,7 @@
           v-for="t in types"
           :key="t"
           v-model="types"
-          @input="onClose(tag)"
+          @input="onClose(c)"
           close
           >{{ t }}
         </v-chip>
@@ -266,6 +265,17 @@ export default {
           }
         }
       `;
+    },
+
+    onClose(c) {
+      this.categories = this.arrayRemove(this.categories, c)
+    },
+
+    // Using filter method to create a remove method
+    arrayRemove(arr, value) {
+      return arr.filter(function(foo){
+        return foo != value;
+      });
     },
   },
 };
