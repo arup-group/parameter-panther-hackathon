@@ -8,6 +8,19 @@
         type="number"
       ></v-text-field>
       <v-card-text class="pl-0"
+        >
+        Categories:
+        <v-chip
+          v-for="c in categories"
+          :key="c"
+          v-model="categories"
+          @input="onClose(tag)"
+          close=""
+          >
+          {{ c }}
+        </v-chip>
+      </v-card-text>
+      <v-card-text class="pl-0"
         >Families:
         <v-chip
           v-for="f in families"
@@ -97,8 +110,9 @@ export default {
   components: {},
   data() {
     return {
-      url: "https://speckle.xyz/streams/0d3cb7cb52/objects/f833afec2e17457f17e7f6429a106187",
+      url: "https://v2.staging-speckle.arup.com/streams/e0ef2a4461/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
+      categories: ["None"],
       families: ["None"],
       types: ["None"],
       query:
@@ -195,17 +209,19 @@ export default {
       this.flatObjs = obj.children.objects.map((o) =>
         flat(o.data, { safe: false })
       );
-
+      
+      const uniqueCategories = new Set();
       const uniqueFamilies = new Set();
       const uniqueTypes = new Set();
       this.flatObjs.forEach((o) => {
+        if(o.category) uniqueCategories.add(o.category);
         if(o.family) uniqueFamilies.add(o.family);
         if(o.type) uniqueTypes.add(o.type);
       });
 
+      this.categories = Array.from(uniqueCategories)
       this.families = Array.from(uniqueFamilies)
       this.types = Array.from(uniqueTypes)
-
 
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
