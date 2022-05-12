@@ -7,13 +7,20 @@
         v-model.number="limit"
         type="number"
       ></v-text-field>
-      <v-card-text class="pl-0"
+      <v-select
+        :items="categories"
+        label="Categories"
+        @input="changedCategory"
+        dense
+        />
+      <!-- <v-card-text class="pl-0"
         >Categories:
         <v-chip
           v-for="c in categories"
           :key="c"
           v-model="categories"
           @input="onClose(tag)"
+          @click="pushSelected(c)"
           close=""
           >
           {{ c }}
@@ -40,11 +47,12 @@
           close
           >{{ t }}
         </v-chip>
-      </v-card-text>
+      </v-card-text> -->
 
       <v-btn
         elevation="2"
         color="primary"
+        :disabled="this.selectedCategory === null"
         :loading="fetchLoading && !prevLoading && !nextLoading"
         @click="fetchChildren"
         >Fetch</v-btn
@@ -111,11 +119,10 @@ export default {
     return {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
-      categories: ["None"],
+      categories: ['Mass', 'Site', 'Doors', 'Ducts', 'Grids', 'Pipes', 'Roofs', 'Rooms', 'Views', 'Walls', 'Wires', 'Floors', 'Stairs', 'Fascias', 'Gutters', 'Windows', 'Ceilings', 'Conduits', 'Railings', 'Supports', 'Flex Ducts', 'Flex Pipes', 'Slab Edges', 'Topography', 'Cable Trays', 'Wall Sweeps', 'Duct Systems', 'Model Groups', 'Roof Soffits', 'Generic Models', 'Piping Systems', 'Curtain Systems', 'Lighting Fixtures', 'Structural Columns', 'Project Information', 'Electrical Equipment', 'Structural Beam Systems','Structural Foundations'],
+      selectedCategory: null,
       families: ["None"],
       types: ["None"],
-      query:
-        '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
       // select:
       //   '["speckle_type","id", "elementId", "category", "family", "type", "parameters.HOST_AREA_COMPUTED.value", "parameters.HOST_VOLUME_COMPUTED.value"]',
       cursors: [],
@@ -128,6 +135,7 @@ export default {
         "type",
       ],
       flatObjs: [],
+      filteredFlatObjs: [],
       headers: [],
       limit: 10,
       fetchLoading: false,
@@ -141,6 +149,11 @@ export default {
       // If the limit is changed, we need to reset the query
       this.fetchChildren();
     },
+  },
+  computed: {
+    query() {
+      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"","field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
+    }
   },
   methods: {
     async next() {
@@ -209,18 +222,18 @@ export default {
         flat(o.data, { safe: false })
       );
       
-      const uniqueCategories = new Set();
-      const uniqueFamilies = new Set();
-      const uniqueTypes = new Set();
-      this.flatObjs.forEach((o) => {
-        if(o.category) uniqueCategories.add(o.category);
-        if(o.family) uniqueFamilies.add(o.family);
-        if(o.type) uniqueTypes.add(o.type);
-      });
+      // const uniqueCategories = new Set();
+      // const uniqueFamilies = new Set();
+      // const uniqueTypes = new Set();
+      // this.flatObjs.forEach((o) => {
+      //   if(o.category) uniqueCategories.add(o.category);
+      //   if(o.family) uniqueFamilies.add(o.family);
+      //   if(o.type) uniqueTypes.add(o.type);
+      // });
 
-      this.categories = Array.from(uniqueCategories)
-      this.families = Array.from(uniqueFamilies)
-      this.types = Array.from(uniqueTypes)
+      // this.categories = Array.from(uniqueCategories)
+      // this.families = Array.from(uniqueFamilies)
+      // this.types = Array.from(uniqueTypes)
 
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
@@ -266,6 +279,9 @@ export default {
         }
       `;
     },
+    changedCategory(category){
+      this.selectedCategory = category;
+    }
   },
 };
 </script>
