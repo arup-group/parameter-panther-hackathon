@@ -192,25 +192,14 @@ export default {
       };
   },
   watch: {
-    // limit() {
-    //   // If the limit is changed, we need to reset the query
-    //   this.fetchChildren();
-    // },
-    // toggle () {
-    //   this.fetchChildren();
-    // },
-    // toggleAll () {
-    //   this.fetchChildren();
-    // },
-    // clearAll () {
-    //   this.fetchChildren();
-    // },
-
-
+    limit() {
+      // If the limit is changed, we need to reset the query
+      this.fetchChildren();
+    },
   },
   computed: {
     query() {
-      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"",",field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
+      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"","field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
     },
     headers () {
       return [
@@ -232,7 +221,7 @@ export default {
             return this.activeFilters.family ? this.activeFilters.family.includes(value) : true;
           }
         },
-                {
+        {
           text: 'ElementId',
           align: 'start',
           sortable: true,
@@ -241,6 +230,9 @@ export default {
             return this.activeFilters.elementId ? this.activeFilters.elementId.includes(value) : true;
           }
         },
+
+        // todo: we need to add all the other headers dynamically
+
         ]
     }
   },
@@ -342,12 +334,8 @@ export default {
       //     text: val,
       //     value: val,
       //     sortable: true,
-      //     filter: value => {
-      //       return this.activeFilters.type ? this.activeFilters.type.includes(value) : true;
-      //     }})
       //     );
 
-      // this.filteredFlatObjs = this.flatObjs;  
       this.initFilters();
 
       // Last, signal that we're done loading!
@@ -399,23 +387,9 @@ export default {
       }*/
     },
 
-    // filterObjects(filters) {
-    //   this.filteredFlatObjs = this.flatObjs.filter(obj => filters.includes(obj.type))
-    // },
-
-    // toggle (col) {
-    //   console.log("toggle");
-
-
-    //   this.activeFilters[col] = this.objects.map((d) => { console.log(d[col]); return d[col] }).filter(
-    //     (value, index, self) => { return self.indexOf(value) === index }
-    //   )
-    //   this.filterObjects(this.activeFilters[col]);
-    // },
-    
     toggleAll (col) {
       console.log("toggleAll");
-      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
+      this.activeFilters[col] = this.flatObjs.map((d) => { return d[col] }).filter(
         (value, index, self) => { return self.indexOf(value) === index }
       )
     },
