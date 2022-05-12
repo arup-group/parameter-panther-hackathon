@@ -34,7 +34,7 @@ export default {
   data() {
     return {
       objectUrls: [
-        "https://v2.staging-speckle.arup.com/streams/e0ef2a4461/objects/2976ed34ee720713a6fe18b50c5aad71",
+        "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       ],
     };
   },
