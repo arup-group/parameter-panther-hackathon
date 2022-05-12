@@ -227,7 +227,7 @@ export default {
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
-            (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
+            (this.fieldsToShow.includes(k) || (k.startsWith("parameters") && (!k.endsWith("applicationUnit") && !k.endsWith("applicationUnitType") && !k.endsWith("applicationId") && !k.endsWith("id") && !k.endsWith("totalChildrenCount") && !k.endsWith("units") && !k.endsWith("speckle_type") && !k.endsWith("isShared") && !k.endsWith("isReadOnly") && !k.endsWith("isTypeParameter") && !k.endsWith("applicationInternalName") && !k.endsWith("name"))))
               ? uniqueHeaderNames.add(k)
               : null //clean up this filtering!
         )
