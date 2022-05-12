@@ -7,12 +7,20 @@
         v-model.number="limit"
         type="number"
       ></v-text-field>
+      <v-btn
+        class="mb-6"
+        elevation="2"
+        color="primary"
+        :loading="fetchLoading && !prevLoading && !nextLoading"
+        @click="fetchChildren"
+        >Fetch
+      </v-btn>
       <v-select
         :items="categories"
         label="Categories"
         @input="changedCategory"
         dense
-        />
+      />
       <!-- <v-card-text class="pl-0"
         >Categories:
         <v-chip
@@ -48,15 +56,6 @@
           >{{ t }}
         </v-chip>
       </v-card-text> -->
-
-      <v-btn
-        elevation="2"
-        color="primary"
-        :disabled="this.selectedCategory === null"
-        :loading="fetchLoading && !prevLoading && !nextLoading"
-        @click="fetchChildren"
-        >Fetch</v-btn
-      >
     </div>
 
     <p class="caption">
@@ -119,7 +118,8 @@ export default {
     return {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
-      categories: ['Mass', 'Site', 'Doors', 'Ducts', 'Grids', 'Pipes', 'Roofs', 'Rooms', 'Views', 'Walls', 'Wires', 'Floors', 'Stairs', 'Fascias', 'Gutters', 'Windows', 'Ceilings', 'Conduits', 'Railings', 'Supports', 'Flex Ducts', 'Flex Pipes', 'Slab Edges', 'Topography', 'Cable Trays', 'Wall Sweeps', 'Duct Systems', 'Model Groups', 'Roof Soffits', 'Generic Models', 'Piping Systems', 'Curtain Systems', 'Lighting Fixtures', 'Structural Columns', 'Project Information', 'Electrical Equipment', 'Structural Beam Systems','Structural Foundations'],
+      categories: [],
+      objects: [],
       selectedCategory: null,
       families: ["None"],
       types: ["None"],
@@ -152,8 +152,8 @@ export default {
   },
   computed: {
     query() {
-      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"","field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
-    }
+      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]`;
+    },
   },
   methods: {
     async next() {
@@ -172,11 +172,9 @@ export default {
       this.prevLoading = false;
     },
 
-    async fetchChildren(
-      cleanCursor = true,
-      cursor = null,
-      appendCursor = true
-    ) {
+    async fetchChildren() {
+      // cleanCursor = true,
+      // appendCursor = true
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
@@ -184,44 +182,32 @@ export default {
       const objectId = url.pathname.split("/")[4];
 
       // Get the gql query string.
-      const query = this.getQuery(streamId, objectId, cursor);
+      const query = this.getCategoryQuery(streamId, objectId);
 
       // Set loading status
       this.fetchLoading = true;
 
       // Send the request to the Speckle graphql endpoint.
       // Note: The limit, selection and query clause are passed in as variables.
-      let rawRes = await fetch(new URL("/graphql", server), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: {
-            limit: this.limit,
-            mySelect: this.select ? JSON.parse(this.select) : null,
-            myQuery: this.query ? JSON.parse(this.query) : null,
-          },
-        }),
-      });
+      let rawRes = await this.fetchFromApi(query, null, server);
 
       // Parse the response into.
       let res = await rawRes.json();
 
       let obj = res.data.stream.object;
 
-      this.totalCount = obj.children.totalCount;
+      this.objects = obj.data;
+      let tempCategories = Object.keys(this.objects).filter((cat) =>
+        cat.startsWith("@")
+      );
+      this.categories = tempCategories.map((cat) => cat.slice(1)).sort();
+
+      // this.totalCount = obj.children.totalCount;
 
       // Cursor management.
-      if (cleanCursor) this.cursors = [null];
-      if (appendCursor) this.cursors.push(obj.children.cursor);
+      // if (cleanCursor) this.cursors = [null];
+      // if (appendCursor) this.cursors.push(obj.children.cursor);
 
-      // Flatten the objects!
-      this.flatObjs = obj.children.objects.map((o) =>
-        flat(o.data, { safe: false })
-      );
-      
       // const uniqueCategories = new Set();
       // const uniqueFamilies = new Set();
       // const uniqueTypes = new Set();
@@ -235,53 +221,97 @@ export default {
       // this.families = Array.from(uniqueFamilies)
       // this.types = Array.from(uniqueTypes)
 
+      // Last, signal that we're done loading!
+      this.fetchLoading = false;
+    },
+    async fetchFromApi(query, variables, server) {
+      return await fetch(new URL("/graphql", server), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: variables,
+        }),
+      });
+    },
+    getCategoryQuery(streamId, objectId) {
+      return `
+          query
+          {
+            stream( id: "${streamId}" ) 
+            {
+              object( id: "${objectId}" ) 
+              {
+                data
+              }
+            }
+          }
+        `;
+    },
+    getQuery(streamId, objectId) {
+      return `
+        query{
+          stream( id: "${streamId}" ) {
+            object( id: "${objectId}" ) {
+              data
+            }
+          }
+        }
+      `;
+    },
+    async changedCategory(category) {
+      this.flatObjs = [];
+      this.selectedCategory = category;
+
+      let objs = this.objects[`@${category}`];
+
+      let referenceIds = objs.map((o) => o["referencedId"]);
+
+      const url = new URL(this.url);
+      const server = url.origin;
+      const streamId = url.pathname.split("/")[2];
+
+      referenceIds.forEach(async (ref) => {
+        let query = this.getQuery(streamId, ref);
+
+        let variables = {
+          limit: this.limit,
+          mySelect: this.select ? JSON.parse(this.select) : null,
+          myQuery: this.query ? JSON.parse(this.query) : null,
+        };
+
+        let rawRes = await this.fetchFromApi(query, variables, server);
+
+        // Parse the response into.
+        let res = await rawRes.json();
+
+        let obj = res.data.stream.object;
+
+        // Flatten the objects!
+        this.flatObjs.push(flat(obj.data, { safe: false }));
+      });
+
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
-      this.flatObjs.forEach((o) =>
+      this.flatObjs.forEach((o) =>{ console.log(o);
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
             (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
               ? uniqueHeaderNames.add(k)
               : null //clean up this filtering!
-        )
+        )}
       );
+
+      console.log(uniqueHeaderNames);
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
         this.headers.push({ text: val, value: val, sortable: true })
       );
-
-      // Last, signal that we're done loading!
-      this.fetchLoading = false;
     },
-
-    getQuery(streamId, objectId, cursor = null) {
-      return `
-        query( $limit: Int, $mySelect: [String!], $myQuery: [JSONObject!]) {
-          stream( id: "${streamId}" ) {
-            object( id: "${objectId}" ) {
-              children( 
-                limit: $limit
-                depth: 100
-                select: $mySelect
-                query: $myQuery
-                ${cursor ? ', cursor:"' + cursor + '"' : ""}
-                ) {
-                cursor
-                objects {
-                  id
-                  data
-                }
-              }
-            }
-          }
-        }
-      `;
-    },
-    changedCategory(category){
-      this.selectedCategory = category;
-    }
   },
 };
 </script>
