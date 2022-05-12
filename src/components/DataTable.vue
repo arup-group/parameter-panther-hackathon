@@ -77,7 +77,7 @@
     <v-data-table
       dense
       :headers="headers"
-      :items="flatObjs"
+      :items="filteredFlatObjs"
       sort-by="family"
       item-key="id"
       :items-per-page="limit"
@@ -104,7 +104,7 @@
                     <template v-slot:default="{ active, toggle }">
                       <v-list-item-action>
                         <v-checkbox :input-value="active" :true-value="item"
-                          @click="toggle(header.value, item)" color="primary" :ripple="false" dense></v-checkbox>
+                          @click="toggle" color="primary" :ripple="false" dense></v-checkbox>
                       </v-list-item-action>
                       <v-list-item-content> 
                         <v-list-item-title v-text="item"></v-list-item-title>
@@ -154,6 +154,7 @@
 
 <script>
 import flat from "flat";
+// import { filter } from 'vue/types/umd';
 
 export default {
   name: "DataTable",
@@ -192,16 +193,19 @@ export default {
       };
   },
   watch: {
-    limit() {
-      // If the limit is changed, we need to reset the query
-      this.fetchChildren();
-    },
-    toggleAll () {
-      this.fetchChildren();
-    },
-    clearAll () {
-      this.fetchChildren();
-    },
+    // limit() {
+    //   // If the limit is changed, we need to reset the query
+    //   this.fetchChildren();
+    // },
+    // toggle () {
+    //   this.fetchChildren();
+    // },
+    // toggleAll () {
+    //   this.fetchChildren();
+    // },
+    // clearAll () {
+    //   this.fetchChildren();
+    // },
 
 
   },
@@ -307,11 +311,16 @@ export default {
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
-        this.headers.push({ text: val, value: val, sortable: true, filter: value => {
-            return this.activeFilters.foo ? this.activeFilters.foo.includes(value) : true;
-          }})
-      );
+        this.headers.push({
+          text: val,
+          value: val,
+          sortable: true}));
+          // filter: value => {
+          //   return this.activeFilters.type ? this.activeFilters.type.includes(value) : true;
+          // }})
+      // );
 
+      this.filteredFlatObjs = this.flatObjs;  
       this.initFilters();
 
       // Last, signal that we're done loading!
@@ -359,14 +368,19 @@ export default {
       }*/
     },
 
+    filterObjects(filters) {
+      this.filteredFlatObjs = this.flatObjs.filter(obj => filters.includes(obj.type))
+    },
+
     toggle (col) {
       this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
         (value, index, self) => { return self.indexOf(value) === index }
       )
+      this.filterObjects(this.activeFilters[col]);
     },
     
     toggleAll (col) {
-      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
+      this.activeFilters[col] = this.objects.map((d) => { console.log(d[col]); return d[col] }).filter(
         (value, index, self) => { return self.indexOf(value) === index }
       )
     },
