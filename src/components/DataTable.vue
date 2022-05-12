@@ -8,8 +8,7 @@
         type="number"
       ></v-text-field>
       <v-card-text class="pl-0"
-        >
-        Categories:
+        >Categories:
         <v-chip
           v-for="c in categories"
           :key="c"
@@ -110,7 +109,7 @@ export default {
   components: {},
   data() {
     return {
-      url: "https://v2.staging-speckle.arup.com/streams/e0ef2a4461/objects/2976ed34ee720713a6fe18b50c5aad71",
+      url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
       categories: ["None"],
       families: ["None"],
