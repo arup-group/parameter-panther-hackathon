@@ -154,7 +154,6 @@
 
 <script>
 import flat from "flat";
-// import { filter } from 'vue/types/umd';
 
 export default {
   name: "DataTable",
@@ -181,13 +180,14 @@ export default {
       flatObjs: [],
       filteredFlatObjs: [],
       // headers: [],
+      uniqueHeaderNames: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
       nextLoading: false,
       search: "",
       dialog: false,
-      filters: { 'type': [], 'family': [], 'elementId': [] },
+      // filters: { 'type': [], 'family': [], 'elementId': [] },
       activeFilters: {},
       };
   },
@@ -201,8 +201,20 @@ export default {
     query() {
       return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"","field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
     },
+    filters () {
+      let tmp = 
+        {
+          'type': [],
+          'family': [],
+          'elementId': []
+        }
+      // this.uniqueHeaderNames.forEach((val) => tmp.push({
+      //   val: [],
+      // }));
+      return tmp
+    },
     headers () {
-      return [
+      let tmp = [
         {
           text: 'Type',
           align: 'start',
@@ -229,11 +241,15 @@ export default {
           filter: value => {
             return this.activeFilters.elementId ? this.activeFilters.elementId.includes(value) : true;
           }
-        },
-
-        // todo: we need to add all the other headers dynamically
-
+        }
         ]
+        this.uniqueHeaderNames.forEach((val) => tmp.push({
+          text: val.replace("parameters.", "").replace(".value", ""),
+          align: 'start',
+          sortable: true,
+          value: val,
+        }));
+        return tmp
     }
   },
   methods: {
@@ -318,13 +334,13 @@ export default {
       // this.types = Array.from(uniqueTypes)
 
       // Create a unique list of all the headers.
-      const uniqueHeaderNames = new Set();
+      this.uniqueHeaderNames = new Set();
       this.flatObjs.forEach((o) =>
         Object.keys(o).forEach(
           (k) =>
-            !k.includes("__closure") &&
+            !k.includes("__closure") && !k.includes("type") && !k.includes("family") && !k.includes("elementId") && !k.includes("category") &&
             (this.fieldsToShow.includes(k) || (k.startsWith("parameters") && (!k.endsWith("applicationUnit") && !k.endsWith("applicationUnitType") && !k.endsWith("applicationId") && !k.endsWith("id") && !k.endsWith("totalChildrenCount") && !k.endsWith("units") && !k.endsWith("speckle_type") && !k.endsWith("isShared") && !k.endsWith("isReadOnly") && !k.endsWith("isTypeParameter") && !k.endsWith("applicationInternalName") && !k.endsWith("name"))))
-              ? uniqueHeaderNames.add(k)
+              ? this.uniqueHeaderNames.add(k)
               : null //clean up this filtering!
         )
       );
