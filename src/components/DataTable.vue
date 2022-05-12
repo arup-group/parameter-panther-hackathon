@@ -77,7 +77,7 @@
     <v-data-table
       dense
       :headers="headers"
-      :items="filteredFlatObjs"
+      :items="flatObjs"
       sort-by="family"
       item-key="id"
       :items-per-page="limit"
@@ -163,7 +163,6 @@ export default {
     return {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
-      objects: ["None"],
       categories: ['Mass', 'Site', 'Doors', 'Ducts', 'Grids', 'Pipes', 'Roofs', 'Rooms', 'Views', 'Walls', 'Wires', 'Floors', 'Stairs', 'Fascias', 'Gutters', 'Windows', 'Ceilings', 'Conduits', 'Railings', 'Supports', 'Flex Ducts', 'Flex Pipes', 'Slab Edges', 'Topography', 'Cable Trays', 'Wall Sweeps', 'Duct Systems', 'Model Groups', 'Roof Soffits', 'Generic Models', 'Piping Systems', 'Curtain Systems', 'Lighting Fixtures', 'Structural Columns', 'Project Information', 'Electrical Equipment', 'Structural Beam Systems','Structural Foundations'],
       selectedCategory: null,
       families: ["None"],
@@ -181,7 +180,7 @@ export default {
       ],
       flatObjs: [],
       filteredFlatObjs: [],
-      headers: [],
+      // headers: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
@@ -211,7 +210,38 @@ export default {
   },
   computed: {
     query() {
-      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"","field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
+      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":"",",field":"category","operator":"=","value":"${this.selectedCategory}"}]`;
+    },
+    headers () {
+      return [
+        {
+          text: 'Type',
+          align: 'start',
+          sortable: true,
+          value: 'type',
+          filter: value => {
+            return this.activeFilters.type ? this.activeFilters.type.includes(value) : true;
+          }
+        },
+        {
+          text: 'Family',
+          align: 'start',
+          sortable: true,
+          value: 'family',
+          filter: value => {
+            return this.activeFilters.family ? this.activeFilters.family.includes(value) : true;
+          }
+        },
+                {
+          text: 'ElementId',
+          align: 'start',
+          sortable: true,
+          value: 'elementId',
+          filter: value => {
+            return this.activeFilters.elementId ? this.activeFilters.elementId.includes(value) : true;
+          }
+        },
+        ]
     }
   },
   methods: {
@@ -269,6 +299,7 @@ export default {
       let res = await rawRes.json();
 
       let obj = res.data.stream.object;
+      console.log("obj:", obj);
 
       this.totalCount = obj.children.totalCount;
 
@@ -281,18 +312,15 @@ export default {
         flat(o.data, { safe: false })
       );
       
-      const uniqueObjects = new Set();
       // const uniqueCategories = new Set();
       // const uniqueFamilies = new Set();
       // const uniqueTypes = new Set();
-      this.flatObjs.forEach((o) => {
-        uniqueObjects.add(o);
+      // this.flatObjs.forEach((o) => {
         // if(o.category) uniqueCategories.add(o.category);
         // if(o.family) uniqueFamilies.add(o.family);
         // if(o.type) uniqueTypes.add(o.type);
-      });
+      // });
 
-      this.objects = Array.from(uniqueObjects)
       // this.categories = Array.from(uniqueCategories)
       // this.families = Array.from(uniqueFamilies)
       // this.types = Array.from(uniqueTypes)
@@ -309,18 +337,17 @@ export default {
         )
       );
 
-      this.headers = [];
-      uniqueHeaderNames.forEach((val) =>
-        this.headers.push({
-          text: val,
-          value: val,
-          sortable: true}));
-          // filter: value => {
-          //   return this.activeFilters.type ? this.activeFilters.type.includes(value) : true;
-          // }})
-      // );
+      // uniqueHeaderNames.forEach((val) =>
+      //   this.headers.push({
+      //     text: val,
+      //     value: val,
+      //     sortable: true,
+      //     filter: value => {
+      //       return this.activeFilters.type ? this.activeFilters.type.includes(value) : true;
+      //     }})
+      //     );
 
-      this.filteredFlatObjs = this.flatObjs;  
+      // this.filteredFlatObjs = this.flatObjs;  
       this.initFilters();
 
       // Last, signal that we're done loading!
@@ -353,12 +380,16 @@ export default {
 
     initFilters() {
       for (let col in this.filters) {
-        this.filters[col] = this.objects.map((d) => { return d[col] }).filter(
+        this.filters[col] = this.flatObjs.map((d) => { return d[col] }).filter(
           (value, index, self) => { return self.indexOf(value) === index }
         )
       }
+
+      console.log("flatObjs:", this.flatObjs);
+
       // TODO restore previous activeFilters before add/remove item
-      this.activeFilters = Object.assign({}, this.filters)
+      this.activeFilters = Object.assign({}, this.filters);
+      console.log(this.filters);
       /*if (Object.keys(this.activeFilters).length === 0) this.activeFilters = Object.assign({}, this.filters)
       else {
         setTimeout(() => {
@@ -368,24 +399,30 @@ export default {
       }*/
     },
 
-    filterObjects(filters) {
-      this.filteredFlatObjs = this.flatObjs.filter(obj => filters.includes(obj.type))
-    },
+    // filterObjects(filters) {
+    //   this.filteredFlatObjs = this.flatObjs.filter(obj => filters.includes(obj.type))
+    // },
 
-    toggle (col) {
-      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
-        (value, index, self) => { return self.indexOf(value) === index }
-      )
-      this.filterObjects(this.activeFilters[col]);
-    },
+    // toggle (col) {
+    //   console.log("toggle");
+
+
+    //   this.activeFilters[col] = this.objects.map((d) => { console.log(d[col]); return d[col] }).filter(
+    //     (value, index, self) => { return self.indexOf(value) === index }
+    //   )
+    //   this.filterObjects(this.activeFilters[col]);
+    // },
     
     toggleAll (col) {
-      this.activeFilters[col] = this.objects.map((d) => { console.log(d[col]); return d[col] }).filter(
+      console.log("toggleAll");
+      this.activeFilters[col] = this.objects.map((d) => { return d[col] }).filter(
         (value, index, self) => { return self.indexOf(value) === index }
       )
     },
     
     clearAll (col) {
+      console.log("clearAll");
+      console.log(col);
       this.activeFilters[col] = []
     },
 
