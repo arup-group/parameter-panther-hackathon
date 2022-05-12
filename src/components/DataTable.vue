@@ -76,8 +76,58 @@
       :search="search"
       hide-default-footer
       class="elevation-1 my-4"
-      show-select
-    ></v-data-table>
+      show-select>
+      <template v-for="(col, i) in filters" v-slot:[`header.${i}`]="{ header }">
+        <div style="display: inline-block; padding: 16px 0;">{{ header.text }}</div>
+        <div style="float: right; margin-top: 8px">
+          <v-menu :close-on-content-click="false" :nudge-width="200" offset-y transition="slide-y-transition" left fixed style="position: absolute; right: 0">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn color="indigo" icon v-bind="attrs" v-on="on">
+                <v-icon small 
+                  :color="activeFilters[header.value] && activeFilters[header.value].length < filters[header.value].length ? 'red' : 'default'">
+                  mdi-filter-variant
+                </v-icon>
+              </v-btn>
+            </template>
+            <v-list flat dense class="pa-0">
+              <v-list-item-group multiple v-model="activeFilters[header.value]" class="py-2">
+                <template>
+                  <v-list-item :value="item" :ripple="false" v-for="(item) in filters[header.value]" :key="`${item}`">
+                    <template v-slot:default="{ active, toggle }">
+                      <v-list-item-action>
+                        <v-checkbox :input-value="active" :true-value="item"
+                          @click="toggle" color="primary" :ripple="false" dense></v-checkbox>
+                      </v-list-item-action>
+                      <v-list-item-content> 
+                        <v-list-item-title v-text="item"></v-list-item-title>
+                      </v-list-item-content>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-item-group>
+              <v-divider></v-divider>
+              <v-row no-gutters>
+                <v-col cols="6">
+                  <v-btn text block @click="toggleAll(header.value)" color="success">Toggle all</v-btn>
+                </v-col>
+                <v-col cols="6">
+                  <v-btn text block @click="clearAll(header.value)" color="warning">Clear all</v-btn>
+                </v-col>
+              </v-row>
+            </v-list>
+          </v-menu>
+        </div>
+      </template>
+      <template v-slot:header="{ props: { headers } }">
+        <thead>
+          <tr>
+            <th :colspan="headers.length">
+              This is a header
+            </th>
+          </tr>
+        </thead>
+      </template>
+    </v-data-table>
 
     <v-btn
       @click="prev"
@@ -113,6 +163,7 @@ export default {
     return {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
+      objects: ["None"],
       categories: ["None"],
       families: ["None"],
       types: ["None"],
@@ -136,7 +187,10 @@ export default {
       prevLoading: false,
       nextLoading: false,
       search: "",
-    };
+      dialog: false,
+      filters: { 'type': [], 'family': [], 'category': [] },
+      activeFilters: {},
+      };
   },
   watch: {
     limit() {
@@ -211,15 +265,18 @@ export default {
         flat(o.data, { safe: false })
       );
       
+      const uniqueObjects = new Set();
       const uniqueCategories = new Set();
       const uniqueFamilies = new Set();
       const uniqueTypes = new Set();
       this.flatObjs.forEach((o) => {
+        uniqueObjects.add(o);
         if(o.category) uniqueCategories.add(o.category);
         if(o.family) uniqueFamilies.add(o.family);
         if(o.type) uniqueTypes.add(o.type);
       });
 
+      this.objects = Array.from(uniqueObjects)
       this.categories = Array.from(uniqueCategories)
       this.families = Array.from(uniqueFamilies)
       this.types = Array.from(uniqueTypes)
@@ -240,6 +297,8 @@ export default {
       uniqueHeaderNames.forEach((val) =>
         this.headers.push({ text: val, value: val, sortable: true })
       );
+
+      this.initFilters();
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
@@ -267,6 +326,33 @@ export default {
           }
         }
       `;
+    },
+
+    initFilters() {
+      for (let col in this.filters) {
+        this.filters[col] = this.objects.map((d) => { return d[col] }).filter(
+          (value, index, self) => { return self.indexOf(value) === index }
+        )
+      }
+      // TODO restore previous activeFilters before add/remove item
+      this.activeFilters = Object.assign({}, this.filters)
+      /*if (Object.keys(this.activeFilters).length === 0) this.activeFilters = Object.assign({}, this.filters)
+      else {
+        setTimeout(() => {
+          console.log(this.activeFilters)
+          //this.activeFilters = Object.assign({}, this.filters)
+        }, 1)
+      }*/
+    },
+    
+    toggleAll (col) {
+      this.activeFilters[col] = this.desserts.map((d) => { return d[col] }).filter(
+        (value, index, self) => { return self.indexOf(value) === index }
+      )
+    },
+    
+    clearAll (col) {
+      this.activeFilters[col] = []
     },
 
     onClose(c) {
