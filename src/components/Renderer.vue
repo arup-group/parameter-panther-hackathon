@@ -5,6 +5,24 @@
       id="rendererparent"
       style="height: 700px; width: 100%"
     >
+      <div
+        :style="`
+          height: 100vh;
+          width: 100%;
+          ${!$vuetify.breakpoint.smAndDown ? 'top: -64px;' : 'top: -56px;'}
+          left: 22px;
+          position: absolute;
+          z-index: 10;
+          pointer-events: none;`"
+      >
+        <object-selection
+          v-show="selectionData.length !== 0"
+          :key="'one'"
+          :objects="selectionData"
+          :stream-id="$route.params.streamId"
+          @clear-selection="selectionData = []"
+        />
+      </div>
       <v-fade-transition>
         <div v-show="!hasLoadedModel" class="overlay cover-all">
           <transition name="fade">
@@ -163,6 +181,9 @@ import throttle from "lodash.throttle";
 
 export default {
   name: "Renderer",
+  components: {
+    ObjectSelection: () => import("./viewer/ObjectSelection"),
+  },
   props: {
     autoLoad: {
       type: Boolean,
@@ -194,10 +215,29 @@ export default {
       alertMessage: null,
       showAlert: false,
       selectedObjects: [],
+      selectionData: [],
       showObjectDetails: false,
       hasImg: false,
       namedViews: [],
     };
+  },
+  watch: {
+    unloadTrigger() {
+      this.unloadData();
+    },
+    fullScreen() {
+      setTimeout(() => window.__viewer.onWindowResize(), 20);
+    },
+    loadProgress(newVal) {
+      if (newVal >= 99) {
+        let views = window.__viewer.interactions.getViews();
+        this.namedViews.push(...views);
+      }
+    },
+    objectUrls() {
+      this.unloadData();
+      this.load();
+    },
   },
   mounted() {
     this.renderStream();
@@ -233,7 +273,7 @@ export default {
       window.__viewer.interactions.setView(id);
     },
     sectionToggle() {
-      window.__viewer.interactions.toggleSectionBox();
+      window.__viewer.toggleSectionBox();
     },
     setupEvents() {
       window.__viewer.on("load-warning", ({ message }) => {
@@ -251,10 +291,10 @@ export default {
         )
       );
       window.__viewer.on("select", (objects) => {
-        // console.log(objects)
+        this.$emit("selection", objects);
         this.selectedObjects.splice(0, this.selectedObjects.length);
-        this.selectedObjects.push(...objects);
-        this.$emit("selection", this.selectedObjects);
+        this.selectedObjects.push(objects);
+        //this.selectionData.push(objects.userData)
       });
     },
     load() {
@@ -265,6 +305,12 @@ export default {
         window.__viewerLastLoadedUrl = url;
       });
       this.setupEvents();
+    },
+    unloadData() {
+      window.__viewer.sceneManager.removeAllObjects();
+      this.hasLoadedModel = false;
+      this.loadProgress = 0;
+      this.namedViews.splice(0, this.namedViews.length);
     },
   },
 };
