@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <div class="mb-4">
+      <v-btn @click="paramUpdateTest">TEST</v-btn>
       <v-text-field label="Object Url" v-model="url"></v-text-field>
       <v-text-field
         label="Limit"
@@ -113,6 +114,7 @@ export default {
     return {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
+      parameterUpdater: new ParameterUpdater(""),
       categories: ["None"],
       families: ["None"],
       types: ["None"],
@@ -160,6 +162,10 @@ export default {
       ); // fetch using the second last cursor
       this.prevLoading = false;
     },
+    paramUpdateTest() {
+      this.parameterUpdater.updateParam("001e4a317dff1b69fbaff7ed0a63fde5", "cfef2a72708bd4ba727715d8c14991d0", "THIS IS A NEW VALUE");
+      console.log(this.parameterUpdater);
+    },
 
     async fetchChildren(
       cleanCursor = true,
@@ -171,6 +177,7 @@ export default {
       const server = url.origin;
       const streamId = url.pathname.split("/")[2];
       const objectId = url.pathname.split("/")[4];
+      this.parameterUpdater.streamid = streamId;
 
       // Get the gql query string.
       const query = this.getQuery(streamId, objectId, cursor);
@@ -197,11 +204,8 @@ export default {
 
       // Parse the response into.
       let res = await rawRes.json();
-      console.log("res:", res);
-      const parameterUpdater = new ParameterUpdater(streamId);
-      parameterUpdater.addObjects(res.data.stream.object.children.objects);
-      console.log("parameterUpdater:", parameterUpdater);
-      parameterUpdater.commitObjects();
+      // const parameterUpdater = new ParameterUpdater(streamId);
+      this.parameterUpdater.addObjects(res.data.stream.object.children.objects);
 
       let obj = res.data.stream.object;
 

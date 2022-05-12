@@ -1,54 +1,3 @@
-/*
-interface Object {
-    id: string;
-    elementId: string;
-    parameters: {
-        id: string;
-        speckle_type: "Base";
-        applicatoinId: null;
-        totalChildrenCount: 0;
-        EXAMPLE_PARAM {
-            id: string;
-            name: string;
-            value: any;
-            isShared: boolean;
-            isReadOnly: false;
-            speckle_type: string;
-            isTypeParameter: boolean;
-            totalChildrenCount: 0;
-            applicationUnitType: string;
-            applicationInternalName: string;
-        }[]
-    }
-}
-*/
-
-export class ParameterObject {
-  constructor({
-    id,
-    name,
-    value,
-    isShared,
-    isReadOnly,
-    speckle_type,
-    isTypeParameter,
-    totalChlidrenCount,
-    applicationUnitType,
-    applicationInternalName,
-  }) {
-    this.id = `${id}-ParameterUpdater-${new Date().getTime()}`;
-    this.name = name;
-    this.value = value;
-    this.isShared = isShared;
-    this.isReadOnly = isReadOnly;
-    this.speckle_type = speckle_type;
-    this.isTypeParameter = isTypeParameter;
-    this.totalChlidrenCount = totalChlidrenCount;
-    this.applicationUnitType = applicationUnitType;
-    this.applicationInternalName = applicationInternalName;
-  }
-}
-
 export class SpeckleObject {
   constructor({ id, elementId, units, parameters }) {
     this.id = `${id}-ParameterUpdater-${new Date().getTime()}`;
@@ -64,23 +13,42 @@ export class SpeckleObject {
     const paramFilter = parameterArr.filter(
       (p) => typeof p === "object" && p !== null
     );
-    this.parameters = paramFilter.map((p) => new ParameterObject(p));
+    this.parameters = paramFilter.map((p) => ({
+      ...p,
+      id: `${p.id}-ParameterUpdater-${new Date().getTime()}`,
+    }));
   }
 }
 
 export class ParameterUpdater {
   objects = []; // ParameterObject[];
   constructor(streamid) {
-    this.tmpstreamid = streamid;
-    this.streamid = "67899fd79d";
+    this.streamid = streamid;
   }
-  addObjects(objects /* objects directly from graphql */) {
+  addObjects(objects /* objects directly from speckle */) {
     objects.forEach((object) => {
       this.objects.push(new SpeckleObject(object.data));
     });
   }
+
+  updateParam(objId, paramId, newVal) {
+    this.objects = this.objects.map((o) => {
+      if (o.id.split("-")[0] !== objId) return o;
+      return {
+        ...o,
+        parameters: o.parameters.map((p) => {
+          if (p.id.split("-")[0] !== paramId) return p;
+          return {
+            ...p,
+            value: newVal,
+          };
+        }),
+      };
+    });
+  }
+
   async commitObjects() {
-      // add each object to a speckle object and push that up
+    // add each object to a speckle object and push that up
     const formData = new FormData();
     const tojson = this.objects.map((o) => ({
       id: o.id,
