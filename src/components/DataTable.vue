@@ -590,7 +590,6 @@ export default {
       let filteredHeaders = this.instanceParameters
         .filter((header) => this.selectedInstanceParameters.includes(header))
         .sort();
-      this.uniqueHeaderNames = new Set(filteredHeaders);
       let headerName = filteredHeaders.map(header => header.split("|")[0])  ;  
       this.uniqueHeaderNames = new Set(headerName);
     },
