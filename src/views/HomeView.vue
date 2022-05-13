@@ -34,7 +34,7 @@ export default {
   data() {
     return {
       objectUrls: [],
-      filter: [],
+      filter: {},
     };
   },
   methods: {

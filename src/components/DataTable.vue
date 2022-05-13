@@ -79,10 +79,10 @@
       v-model="selectedItem"
     >
       <template v-for="(col, i) in filters" v-slot:[`header.${i}`]="{ header }">
-        <div :key="i" style="display: inline-block; padding: 16px 0">
+        <div :key="`${i}-header`" style="display: inline-block; padding: 16px 0">
           {{ header.text }}
         </div>
-        <div :key="i" style="float: right; margin-top: 8px">
+        <div :key="`${i}-other`" style="float: right; margin-top: 8px">
           <v-menu
             :close-on-content-click="false"
             :nudge-width="200"
@@ -319,14 +319,17 @@ export default {
     },
     filters() {
       let tmp = {
-        // elementId: [],
-        // family: [],
-        // type: [],
-        // level: [],
+        elementId: [],
+        family: [],
+        type: [],
+        level: [],
       };
-      // this.uniqueHeaderNames.forEach((val) => tmp.push({
-      //   val: [],
-      // }));
+      this.uniqueHeaderNames.forEach(() => {
+        tmp = {
+          ...tmp,
+          val: []
+        }
+      });
       return tmp;
     },
     headers() {
