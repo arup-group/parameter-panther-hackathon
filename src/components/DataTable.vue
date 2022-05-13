@@ -237,12 +237,12 @@ export default {
         '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
       cursors: [],
       fieldsToShow: [
-        "speckle_type",
-        "id",
-        "elementId",
-        "category",
-        "family",
-        "type",
+        // "speckle_type",
+        // "id",
+        // "elementId",
+        // "category",
+        // "family",
+        // "type",
       ],
       flatObjs: [],
       filteredFlatObjs: [],
@@ -311,17 +311,6 @@ export default {
           value: 'actions',
         },
         {
-          text: "ElementId",
-          align: "start",
-          sortable: true,
-          value: "elementId",
-          filter: (value) => {
-            return this.activeFilters.elementId
-              ? this.activeFilters.elementId.includes(value)
-              : true;
-          },
-        },
-        {
           text: "Family",
           align: "start",
           sortable: true,
@@ -340,6 +329,17 @@ export default {
           filter: (value) => {
             return this.activeFilters.type
               ? this.activeFilters.type.includes(value)
+              : true;
+          },
+        },
+        {
+          text: "ElementId",
+          align: "start",
+          sortable: true,
+          value: "elementId",
+          filter: (value) => {
+            return this.activeFilters.elementId
+              ? this.activeFilters.elementId.includes(value)
               : true;
           },
         },
@@ -482,6 +482,9 @@ export default {
 
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
+
+      console.log("flatObjs:", this.flatObjs);
+
       this.flatObjs.forEach((o) => {
         Object.keys(o).forEach(
           (k) =>
@@ -491,8 +494,7 @@ export default {
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
-            (this.fieldsToShow.includes(k) ||
-              (k.startsWith("parameters") &&
+            (k.startsWith("parameters") &&
                 !k.endsWith("applicationUnit") &&
                 !k.endsWith("applicationUnitType") &&
                 !k.endsWith("applicationId") &&
@@ -504,7 +506,7 @@ export default {
                 !k.endsWith("isReadOnly") &&
                 !k.endsWith("isTypeParameter") &&
                 !k.endsWith("applicationInternalName") &&
-                !k.endsWith("name")))
+                !k.endsWith("name"))
               ? this.uniqueHeaderNames.add(k)
               : null //clean up this filtering!
         );
