@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <div class="mb-4">
+    <div class="mb-0">
       <div>
         <v-row no-gutters>
-          <v-col md="11">
+          <v-col md="9">
             <v-text-field label="Object Url" v-model="url"></v-text-field>
           </v-col>
           <v-col md="1" class="pl-4">
@@ -13,16 +13,17 @@
               type="number"
             ></v-text-field>
           </v-col>
+          <v-col md="1" class="pl-4">
+            <v-btn
+              elevation="2"
+              color="primary"
+              :loading="fetchLoading && !prevLoading && !nextLoading"
+              @click="fetchCategories"
+              >Fetch Categories
+            </v-btn>
+          </v-col>
         </v-row>
       </div>
-      <v-btn
-        class="mb-6"
-        elevation="2"
-        color="primary"
-        :loading="fetchLoading && !prevLoading && !nextLoading"
-        @click="fetchCategories"
-        >Fetch Categories
-      </v-btn>
       <v-autocomplete
         v-model="selectedCategory"
         :items="categories"
@@ -31,12 +32,9 @@
         dense
       />
     </div>
-
-    <p class="caption">
-      Total count: {{ totalCount ? totalCount : "unknown" }}
-    </p>
-
-    <v-card-title> Revit Instance Parameters </v-card-title>
+    <v-card-title class="ml-0 pl-0 pt-2">
+      Revit Instance Parameters
+    </v-card-title>
     <v-autocomplete
       v-model="selectedInstanceParameters"
       :items="instanceParameters"
@@ -57,7 +55,7 @@
         </v-list-tile-content>
       </template>
     </v-autocomplete>
-    <v-card-title>
+    <v-card-title class="pl-0 pb-2">
       Search:
       <v-spacer></v-spacer>
       <v-text-field
@@ -78,8 +76,6 @@
       :search="search"
       hide-default-footer
       class="elevation-1 my-4"
-      show-select
-      single-select
       v-model="selectedItem"
     >
       <template v-for="(col, i) in filters" v-slot:[`header.${i}`]="{ header }">
@@ -169,39 +165,32 @@
         </div>
       </template>
       <template v-slot:top>
-        <v-toolbar flat color="white">
-          <v-dialog v-model="dialog" max-width="750px">
-            <template v-slot:activator="{ on }">
-              <v-btn color="primary" dark class="mb-2" v-on="on"
-                >Edit Item</v-btn
-              >
-            </template>
-            <v-card>
-              <v-card-title>
-                <span class="headline">Edit Parameters</span>
-              </v-card-title>
-              <v-card-text>
-                <v-container>
-                  <template v-for="(field, i) in editableFields">
-                    <!-- should specify which "headers" are editable -->
-                    <v-col :key="i" cols="12">
-                      <v-text-field
-                        :key="i"
-                        v-model="editedItem[field]"
-                        :label="field"
-                      ></v-text-field>
-                    </v-col>
-                  </template>
-                </v-container>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
-                <v-btn color="blue darken-1" text @click="save">Save</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-        </v-toolbar>
+        <v-dialog v-model="dialog" max-width="750px">
+          <v-card>
+            <v-card-title>
+              <span class="headline">Edit Parameters</span>
+            </v-card-title>
+            <v-card-text>
+              <v-container>
+                <template v-for="(field, i) in editableFields">
+                  <!-- should specify which "headers" are editable -->
+                  <v-col :key="i" cols="12">
+                    <v-text-field
+                      :key="i"
+                      v-model="editedItem[field]"
+                      :label="field"
+                    ></v-text-field>
+                  </v-col>
+                </template>
+              </v-container>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
+              <v-btn color="blue darken-1" text @click="save">Save</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </template>
       <template v-slot:[`item.actions`]="{ item }">
         <v-icon small class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
@@ -228,6 +217,7 @@
     <p class="caption mt-2">
       Curr items: {{ (cursors.length - 1) * limit }} Cursor:
       {{ cursors ? cursors : "n/a" }}
+      Total count: {{ totalCount ? totalCount : "unknown" }}
     </p>
 
     <div style="width: 100%" class="d-flex justify-end">
@@ -338,10 +328,10 @@ export default {
     headers() {
       let tmp = [
         {
-          text: 'Edit',
+          text: "Edit",
           align: "start",
           sortable: false,
-          value: 'actions',
+          value: "actions",
         },
         {
           text: "Family",
@@ -350,8 +340,8 @@ export default {
           value: "family",
           filter: (value) => {
             return this.activeFilters.family
-            ? this.activeFilters.family.includes(value)
-            : true;
+              ? this.activeFilters.family.includes(value)
+              : true;
           },
         },
         {
@@ -398,12 +388,12 @@ export default {
           });
         }
       });
-        tmp.push({
-          text: "Id",
-          align: "start",
-          sortable: true,
-          value: "id",
-        });
+      tmp.push({
+        text: "Id",
+        align: "start",
+        sortable: true,
+        value: "id",
+      });
       return tmp;
     },
   },
@@ -519,19 +509,18 @@ export default {
 
       let ids = [];
 
-      for(var index in this.flatObjs) {
+      for (var index in this.flatObjs) {
         var o = this.flatObjs[index];
 
-        Object.keys(o).forEach(
-          (k) => {
-            if(
+        Object.keys(o).forEach((k) => {
+          if (
             !k.includes("__closure") &&
             !k.includes("type") &&
             !k.includes("id") &&
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
-            (k.startsWith("parameters") &&
+            k.startsWith("parameters") &&
             !k.endsWith("applicationUnit") &&
             !k.endsWith("applicationUnitType") &&
             !k.endsWith("applicationId") &&
@@ -543,29 +532,30 @@ export default {
             !k.endsWith("isReadOnly") &&
             !k.endsWith("isTypeParameter") &&
             !k.endsWith("applicationInternalName") &&
-            !k.endsWith("name"))) {
-              let isReadOnlyKey = k.replace("value", "isReadOnly");
-              let isTypeParameterKey = k.replace("value", "isTypeParameter");
-              let isReadOnly = o[isReadOnlyKey];
-              let isTypeParameter = o[isTypeParameterKey];
-        
-              if(!isReadOnly && !isTypeParameter) {
-                // console.log("isReadOnly:", isReadOnly);
-                // console.log("isTypeParameter:", isTypeParameter);
-                this.uniqueHeaderNames.add(k);
-                // console.log("kept:", k);
-              }
-              else {
-                // console.log("dropped:", k);
-              }
+            !k.endsWith("name")
+          ) {
+            let isReadOnlyKey = k.replace("value", "isReadOnly");
+            let isTypeParameterKey = k.replace("value", "isTypeParameter");
+            let isReadOnly = o[isReadOnlyKey];
+            let isTypeParameter = o[isTypeParameterKey];
+
+            if (!isReadOnly && !isTypeParameter) {
+              // console.log("isReadOnly:", isReadOnly);
+              // console.log("isTypeParameter:", isTypeParameter);
+              this.uniqueHeaderNames.add(k);
+              // console.log("kept:", k);
+            } else {
+              // console.log("dropped:", k);
             }
           }
-        );
+        });
         ids.push(o.id);
       }
       this.initFilters();
 
-      this.instanceParameters = [...this.uniqueHeaderNames].filter(header => !header.includes("id"));
+      this.instanceParameters = [...this.uniqueHeaderNames].filter(
+        (header) => !header.includes("id")
+      );
 
       // Reset headers initially to empty
       this.uniqueHeaderNames = new Set();
@@ -574,17 +564,18 @@ export default {
       this.totalCount = this.flatObjs.length;
 
       let filter = {
-        "filterBy": { "__parents": { "includes": ids }},
-        "ghostOthers": true };
+        filterBy: { __parents: { includes: ids } },
+        ghostOthers: true,
+      };
       this.$emit("applyFilter", filter);
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
     },
     fetchInstanceParameters() {
-      let filteredHeaders = this.instanceParameters.filter((header) =>
-        this.selectedInstanceParameters.includes(header)
-      ).sort();
+      let filteredHeaders = this.instanceParameters
+        .filter((header) => this.selectedInstanceParameters.includes(header))
+        .sort();
       this.uniqueHeaderNames = new Set(filteredHeaders);
     },
     initFilters() {
@@ -653,18 +644,16 @@ export default {
     save() {
       // console.log("save");
       // console.log("editedItem:", this.editedItem);
-      for(var index in this.flatObjs) {
+      for (var index in this.flatObjs) {
         var obj = this.flatObjs[index];
-        if(obj.id === this.editedItem.id) {
+        if (obj.id === this.editedItem.id) {
           this.editedIndex = index;
         }
       }
       // console.log("editedIndex:", this.editedIndex)
-      Object.entries(this.editedItem).forEach(
-        (k, v) => {
-          this.parameterUpdater.updateParam(this.editedIndex, k, v);
-        }
-      );
+      Object.entries(this.editedItem).forEach((k, v) => {
+        this.parameterUpdater.updateParam(this.editedIndex, k, v);
+      });
       if (this.editedIndex > -1) {
         Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
       } else {
