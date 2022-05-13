@@ -290,9 +290,10 @@ export default {
   computed: {
     filters() {
       let tmp = {
-        // type: [],
-        // family: [],
-        // elementId: [],
+        elementId: [],
+        family: [],
+        type: [],
+        level: [],
       };
       // this.uniqueHeaderNames.forEach((val) => tmp.push({
       //   val: [],
@@ -308,6 +309,28 @@ export default {
         //   value: "action",
         // },
         {
+          text: "ElementId",
+          align: "start",
+          sortable: true,
+          value: "elementId",
+          filter: (value) => {
+            return this.activeFilters.elementId
+              ? this.activeFilters.elementId.includes(value)
+              : true;
+          },
+        },
+        {
+          text: "Family",
+          align: "start",
+          sortable: true,
+          value: "family",
+          filter: (value) => {
+            return this.activeFilters.family
+            ? this.activeFilters.family.includes(value)
+            : true;
+          },
+        },
+        {
           text: "Type",
           align: "start",
           sortable: true,
@@ -319,26 +342,15 @@ export default {
           },
         },
         {
-          text: "Family",
+          text: "Level",
           align: "start",
           sortable: true,
-          value: "family",
-          filter: (value) => {
-            return this.activeFilters.family
-              ? this.activeFilters.family.includes(value)
-              : true;
-          },
-        },
-        {
-          text: "ElementId",
-          align: "start",
-          sortable: true,
-          value: "elementId",
-          filter: (value) => {
-            return this.activeFilters.elementId
-              ? this.activeFilters.elementId.includes(value)
-              : true;
-          },
+          value: "level.name",
+          // filter: (value) => {
+          //   return this.activeFilters.level
+          //     ? this.activeFilters.level.includes(value)
+          //     : true;
+          // },
         },
       ];
 
