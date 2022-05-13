@@ -567,9 +567,6 @@ export default {
 
       this.instanceParameters = [...this.uniqueHeaderNames].filter(header => !header.includes("id"));
 
-      // Reset headers initially to empty
-      this.uniqueHeaderNames = new Set();
-
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
