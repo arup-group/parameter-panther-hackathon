@@ -228,6 +228,9 @@
         >Save</v-btn
       >
     </div>
+    <v-snackbar v-model="successSnackbar" :timeout="2000" color="green" right rounded="pill">
+      Params updated
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -280,6 +283,7 @@ export default {
       activeFilters: {},
       selectedItem: [],
       filter: [],
+      successSnackbar: false
     };
   },
   watch: {
@@ -417,8 +421,10 @@ export default {
       ); // fetch using the second last cursor
       this.prevLoading = false;
     },
-    commitObjects() {
-      this.parameterUpdater.commitObjects();
+    async commitObjects() {
+      await this.parameterUpdater.commitObjects();
+
+      this.successSnackbar = true;
     },
     async fetchFromApi(query, variables, server) {
       return await fetch(new URL("/graphql", server), {
@@ -499,32 +505,36 @@ export default {
 
         let obj = res.data.stream.object;
         // console.log("obj.data:", obj.data);
-        this.parameterUpdater.addObjects([obj]);
+        // filter RevitElementTypes
+        if(!obj.data["speckle_type"].endsWith("RevitElementType")) {
+          this.parameterUpdater.addObjects([obj]);
 
-        // Flatten the object!
-        let flatObj = flat(obj.data, { safe: false });
-        this.flatObjs.push(flatObj);
+          // Flatten the object!
+          let flatObj = flat(obj.data, { safe: false });
+          this.flatObjs.push(flatObj);
+        }
       }
 
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
 
-      console.log("flatObjs:", this.flatObjs);
+      // console.log("flatObjs:", this.flatObjs);
 
       let ids = [];
 
-      for (var index in this.flatObjs) {
+      for(var index in this.flatObjs) {
         var o = this.flatObjs[index];
 
-        Object.keys(o).forEach((k) => {
-          if (
+        Object.keys(o).forEach(
+          (k) => {
+            if(
             !k.includes("__closure") &&
             !k.includes("type") &&
             !k.includes("id") &&
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
-            k.startsWith("parameters") &&
+            (k.startsWith("parameters") &&
             !k.endsWith("applicationUnit") &&
             !k.endsWith("applicationUnitType") &&
             !k.endsWith("applicationId") &&
@@ -536,31 +546,38 @@ export default {
             !k.endsWith("isReadOnly") &&
             !k.endsWith("isTypeParameter") &&
             !k.endsWith("applicationInternalName") &&
-            !k.endsWith("name")
-          ) {
-            let isReadOnlyKey = k.replace("value", "isReadOnly");
-            let isTypeParameterKey = k.replace("value", "isTypeParameter");
-            let isReadOnly = o[isReadOnlyKey];
-            let isTypeParameter = o[isTypeParameterKey];
+            !k.endsWith("name"))) {
+              let isReadOnlyKey = k.replace("value", "isReadOnly");
+              let isTypeParameterKey = k.replace("value", "isTypeParameter");
+              let nameKey = k.replace("value", "name");
+              let applicationInternalNameKey = k.replace("value", "applicationInternalName");
 
-            if (!isReadOnly && !isTypeParameter) {
-              // console.log("isReadOnly:", isReadOnly);
-              // console.log("isTypeParameter:", isTypeParameter);
-              this.uniqueHeaderNames.add(k);
-              // console.log("kept:", k);
-            } else {
-              // console.log("dropped:", k);
+              let isReadOnly = o[isReadOnlyKey];
+              let isTypeParameter = o[isTypeParameterKey];
+              let name = o[nameKey];
+              let applicationInternalName = o[applicationInternalNameKey];
+              let units = o["units"];
+        
+              if(!isReadOnly && !isTypeParameter) {
+                // console.log("isReadOnly:", isReadOnly);
+                // console.log("isTypeParameter:", isTypeParameter);
+                // this.uniqueHeaderNames.add(k);
+                // console.log("kept:", k);
+
+                let instanceParameterName = name + " | " + applicationInternalName;
+                if(units) {
+                  instanceParameterName = instanceParameterName + " [" + units + "]";
+                }
+                  this.instanceParameters.push(instanceParameterName);
+              }
+              else {
+                // console.log("dropped:", k);
+              }
             }
           }
-        });
+        );
         ids.push(o.id);
       }
-      this.initFilters();
-
-      this.instanceParameters = [...this.uniqueHeaderNames].filter(
-        (header) => !header.includes("id")
-      );
-
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
@@ -577,7 +594,8 @@ export default {
       let filteredHeaders = this.instanceParameters
         .filter((header) => this.selectedInstanceParameters.includes(header))
         .sort();
-      this.uniqueHeaderNames = new Set(filteredHeaders);
+      let headerName = filteredHeaders.map(header => header.split("|")[0])  ;  
+      this.uniqueHeaderNames = new Set(headerName);
     },
     initFilters() {
       for (let col in this.filters) {
@@ -656,18 +674,24 @@ export default {
       });
     },
     save() {
-      // console.log("save");
-      // console.log("editedItem:", this.editedItem);
-      for (var index in this.flatObjs) {
+      for(var index in this.flatObjs) {
         var obj = this.flatObjs[index];
         if (obj.id === this.editedItem.id) {
           this.editedIndex = index;
         }
       }
-      // console.log("editedIndex:", this.editedIndex)
-      Object.entries(this.editedItem).forEach((k, v) => {
-        this.parameterUpdater.updateParam(this.editedIndex, k, v);
+      const paramIdValArr = {};
+      Object.entries(this.editedItem).forEach(([key, val]) => {
+        const almostObjKey = key.replace("parameters.", "")
+        if (key.endsWith(".id") && !paramIdValArr[val]) paramIdValArr[almostObjKey.replace(".id", "")] = [val, -1];
+        else if (key.endsWith(".value")) paramIdValArr[almostObjKey.replace(".value", "")] = [paramIdValArr[almostObjKey.replace(".value", "")][0], val];
       });
+
+      Object.entries(paramIdValArr).forEach(([key, val]) => {
+        key;
+        this.parameterUpdater.updateParam(this.editedItem.id, val[0], val[1]);
+      });
+      console.log("parameterUpdater:", this.parameterUpdater);
       if (this.editedIndex > -1) {
         Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
       } else {
