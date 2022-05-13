@@ -22,7 +22,7 @@
         color="primary"
         :loading="fetchLoading && !prevLoading && !nextLoading"
         @click="fetchCategories"
-        >Fetch
+        >Fetch Categories
       </v-btn>
       <v-autocomplete
         v-model="selectedCategory"
@@ -48,7 +48,6 @@
         hide-details
       ></v-text-field>
     </v-card-title>
-
     <v-data-table
       dense
       :headers="headers"
@@ -60,6 +59,8 @@
       hide-default-footer
       class="elevation-1 my-4"
       show-select
+      single-select
+      v-model="selectedItem"
     >
       <template v-for="(col, i) in filters" v-slot:[`header.${i}`]="{ header }">
         <div :key="i" style="display: inline-block; padding: 16px 0">
@@ -147,6 +148,45 @@
           </v-menu>
         </div>
       </template>
+      <template v-slot:top>
+        <v-toolbar flat color="white">
+          <v-dialog v-model="dialog" max-width="750px">
+            <template v-slot:activator="{ on }">
+              <v-btn color="primary" dark class="mb-2" v-on="on"
+                >Edit Item</v-btn
+              >
+            </template>
+            <v-card>
+              <v-card-title>
+                <span class="headline">Edit Parameters</span>
+              </v-card-title>
+              <v-card-text>
+                <v-container>
+                  <template v-for="(field, i) in editableFields">
+                    <!-- should specify which "headers" are editable -->
+                    <v-col :key="i" cols="12">
+                      <v-text-field
+                        :key="i"
+                        v-model="editedItem[field]"
+                        :label="field"
+                      ></v-text-field>
+                    </v-col>
+                  </template>
+                </v-container>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
+                <v-btn color="blue darken-1" text @click="save">Save</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-toolbar>
+      </template>
+      <!-- <template v-slot:[`item.actions`]="{ item }">
+        <v-icon small class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
+        <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
+      </template> -->
     </v-data-table>
 
     <v-btn
@@ -205,6 +245,8 @@ export default {
       ],
       flatObjs: [],
       filteredFlatObjs: [],
+      editedItem: {},
+      editableFields: [],
       // headers: [],
       uniqueHeaderNames: [],
       limit: 10,
@@ -215,6 +257,7 @@ export default {
       dialog: false,
       // filters: { 'type': [], 'family': [], 'elementId': [] },
       activeFilters: {},
+      selectedItem: [],
     };
   },
   watch: {
@@ -222,13 +265,34 @@ export default {
       // If the limit is changed, we need to reset the query
       if (this.selectedCategory) this.fetchCategories();
     },
+    dialog(val) {
+      val || this.close();
+    },
+    selectedItem() {
+      if (this.selectedItem) {
+        let obj = this.selectedItem[0];
+
+        let filteredFields = Object.keys(obj)
+          .filter(
+            (key) =>
+              !this.fieldsToShow.includes(key) | key.startsWith("parameters")
+          )
+          .reduce((o, key) => {
+            o[key] = obj[key];
+            return o;
+          }, {});
+
+        this.editedItem = filteredFields;
+        this.editableFields = Object.keys(filteredFields);
+      }
+    },
   },
   computed: {
     filters() {
       let tmp = {
-        type: [],
-        family: [],
-        elementId: [],
+        // type: [],
+        // family: [],
+        // elementId: [],
       };
       // this.uniqueHeaderNames.forEach((val) => tmp.push({
       //   val: [],
@@ -237,6 +301,12 @@ export default {
     },
     headers() {
       let tmp = [
+        // {
+        //   text: "Action",
+        //   align: "start",
+        //   sortable: false,
+        //   value: "action",
+        // },
         {
           text: "Type",
           align: "start",
@@ -271,14 +341,17 @@ export default {
           },
         },
       ];
-      this.uniqueHeaderNames.forEach((val) =>
-        tmp.push({
-          text: val.replace("parameters.", "").replace(".value", ""),
-          align: "start",
-          sortable: true,
-          value: val,
-        })
-      );
+
+      this.uniqueHeaderNames.forEach((val) => {
+        if (val) {
+          tmp.push({
+            text: val.replace("parameters.", "").replace(".value", ""),
+            align: "start",
+            sortable: true,
+            value: val,
+          });
+        }
+      });
       return tmp;
     },
   },
@@ -339,7 +412,6 @@ export default {
       let res = await rawRes.json();
 
       let obj = res.data.stream.object;
-      console.log("obj:", obj);
 
       this.objects = obj.data;
       let tempCategories = Object.keys(this.objects).filter((cat) =>
@@ -392,7 +464,6 @@ export default {
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
       this.flatObjs.forEach((o) => {
-        console.log(o);
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
@@ -418,14 +489,6 @@ export default {
               : null //clean up this filtering!
         );
       });
-
-      // uniqueHeaderNames.forEach((val) =>
-      //   this.headers.push({
-      //     text: val,
-      //     value: val,
-      //     sortable: true,
-      //     );
-
       this.initFilters();
 
       this.totalCount = this.flatObjs.length;
@@ -459,7 +522,6 @@ export default {
         }, 1)
       }*/
     },
-
     toggleAll(col) {
       console.log("toggleAll");
       this.activeFilters[col] = this.flatObjs
@@ -470,15 +532,42 @@ export default {
           return self.indexOf(value) === index;
         });
     },
-
     clearAll(col) {
       console.log("clearAll");
       console.log(col);
       this.activeFilters[col] = [];
     },
+    editItem(item) {
+      let matchingItem = this.flatObjs.filter((obj) => {
+        return obj.id === item.id;
+      });
+      this.editedIndex = this.flatObjs.indexOf(matchingItem);
+      console.log(this.editedIndex);
+      // this.editedItem = Object.assign({}, item);
+      this.dialog = true;
+    },
+    deleteItem(item) {
+      console.log(item);
+      const index = this.flatObjs.indexOf(item);
+      confirm("Are you sure you want to delete this item?") &&
+        this.flatObjs.splice(index, 1);
+    },
+    close() {
+      this.dialog = false;
+      this.$nextTick(() => {
+        this.editedItem = Object.assign({}, this.defaultItem);
+        this.editedIndex = -1;
+      });
+    },
 
-    changedCategory(category) {
-      this.selectedCategory = category;
+    save() {
+      console.log(this.editedItem);
+      if (this.editedIndex > -1) {
+        Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
+      } else {
+        this.flatObjs.push(this.editedItem);
+      }
+      this.close();
     },
   },
 };
