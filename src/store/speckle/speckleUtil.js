@@ -27,7 +27,7 @@ const TOKEN = `${APP_NAME}.AuthToken`;
 const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`;
 const SERVER = `${APP_NAME}.Server`;
 
-export function goToSpeckleAuthpage(server) {
+export function goToSpeckleAuthPage(server) {
   const challenge =
     Math.random().toString(36).substring(2, 15) +
     Math.random().toString(36).substring(2, 15);
@@ -37,6 +37,13 @@ export function goToSpeckleAuthpage(server) {
 
   // Send user to auth page
   location.href = `${server.url}/authn/verify/${server.speckleId}/${challenge}`;
+}
+
+// Log out the current user. This removes the token/refreshToken pair.
+export function speckleLogOut() {
+  // Remove both token and refreshToken from localStorage
+  localStorage.removeItem(TOKEN)
+  localStorage.removeItem(REFRESH_TOKEN)
 }
 
 export function getServer() {

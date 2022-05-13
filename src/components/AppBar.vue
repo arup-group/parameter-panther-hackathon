@@ -9,6 +9,7 @@
     ></v-img>
     <v-toolbar-title>Parameter Panther</v-toolbar-title>
     <v-spacer></v-spacer>
+    <v-btn outlined class="mr-2" @click="$store.dispatch('logout')"> Log out </v-btn>
     <v-btn icon>
       <v-icon>mdi-heart</v-icon>
     </v-btn>
@@ -27,7 +28,7 @@
         </v-list-item>
         <v-list-item @click="() => {}">
           <v-list-item-title>Workflow</v-list-item-title>
-        </v-list-item>        
+        </v-list-item>
       </v-list>
     </v-menu>
   </v-app-bar>
@@ -35,7 +36,7 @@
         
 <script>
 export default {
-  name: "AppBar"
+  name: "AppBar",
 };
 </script>
 

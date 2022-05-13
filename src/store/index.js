@@ -313,7 +313,7 @@ const store = new Vuex.Store({
   },
   actions: {
     redirectToAuth(state, server) {
-      speckleUtil.goToSpeckleAuthpage(state.state.servers[server]);
+      speckleUtil.goToSpeckleAuthPage(state.state.servers[server]);
     },
     async exchangeAccessCode(state, accessCode) {
       const server = speckleUtil.getServer();
@@ -324,6 +324,10 @@ const store = new Vuex.Store({
         server,
       });
     },
+    logout() {
+      // Wipe the tokens
+      speckleUtil.speckleLogOut()
+    },    
     async getUser(state) {
       try {
         console.log("called?")

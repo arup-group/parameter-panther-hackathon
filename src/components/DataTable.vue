@@ -2,12 +2,20 @@
   <v-container>
     <div class="mb-4">
       <v-btn @click="paramUpdateTest">TEST</v-btn>
-      <v-text-field label="Object Url" v-model="url"></v-text-field>
-      <v-text-field
-        label="Limit"
-        v-model.number="limit"
-        type="number"
-      ></v-text-field>
+      <div>
+        <v-row no-gutters>
+          <v-col md="11">
+            <v-text-field label="Object Url" v-model="url"></v-text-field>
+          </v-col>
+          <v-col md="1" class="pl-4">
+            <v-text-field
+              label="Limit"
+              v-model.number="limit"
+              type="number"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+      </div>
       <v-btn
         class="mb-6"
         elevation="2"
@@ -145,13 +153,24 @@ export default {
       );
       console.log(this.parameterUpdater);
     },
+    async fetchFromApi(query, variables, server) {
+      return await fetch(new URL("/graphql", server), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: variables,
+        }),
+      });
+    },
     async fetchCategories() {
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
       const streamId = url.pathname.split("/")[2];
       const objectId = url.pathname.split("/")[4];
-      this.parameterUpdater.streamid = streamId;
 
       // Get the gql query string.
       const query = objectQuery(streamId, objectId);
@@ -165,8 +184,6 @@ export default {
 
       // Parse the response into.
       let res = await rawRes.json();
-      // const parameterUpdater = new ParameterUpdater(streamId);
-      this.parameterUpdater.addObjects(res.data.stream.object.children.objects);
 
       let obj = res.data.stream.object;
 
@@ -182,18 +199,6 @@ export default {
       // Last, signal that we're done loading!
       this.fetchLoading = false;
     },
-    async fetchFromApi(query, variables, server) {
-      return await fetch(new URL("/graphql", server), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: variables,
-        }),
-      });
-    },
     async fetchCategoryObjects(category) {
       // Set loading status
       this.fetchLoading = true;
@@ -207,6 +212,7 @@ export default {
       const url = new URL(this.url);
       const server = url.origin;
       const streamId = url.pathname.split("/")[2];
+      this.parameterUpdater.streamid = streamId;
 
       for (const objectId of referencedIds) {
         let query = objectQuery(streamId, objectId);
@@ -247,10 +253,13 @@ export default {
         this.headers.push({ text: val, value: val, sortable: true })
       );
 
-      this.totalCount = this.filteredFlatObjs.length;
+      this.totalCount = this.flatObjs.length;
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
+
+      // const parameterUpdater = new ParameterUpdater(streamId);
+      this.parameterUpdater.addObjects(this.flatObjs);
     },
   },
 };
