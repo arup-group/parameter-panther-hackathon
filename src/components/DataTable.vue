@@ -238,6 +238,9 @@
         >Save</v-btn
       >
     </div>
+    <v-snackbar v-model="successSnackbar" :timeout="2000" color="green" right rounded="pill">
+      Params updated
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -289,6 +292,7 @@ export default {
       // filters: { 'type': [], 'family': [], 'elementId': [] },
       activeFilters: {},
       selectedItem: [],
+      successSnackbar: false
     };
   },
   watch: {
@@ -423,8 +427,10 @@ export default {
       ); // fetch using the second last cursor
       this.prevLoading = false;
     },
-    commitObjects() {
-      this.parameterUpdater.commitObjects();
+    async commitObjects() {
+      await this.parameterUpdater.commitObjects();
+
+      this.successSnackbar = true;
     },
     async fetchFromApi(query, variables, server) {
       return await fetch(new URL("/graphql", server), {
