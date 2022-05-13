@@ -53,11 +53,101 @@
       dense
       :headers="headers"
       :items="flatObjs"
+      sort-by="family"
+      item-key="id"
       :items-per-page="limit"
       :search="search"
       hide-default-footer
       class="elevation-1 my-4"
-    ></v-data-table>
+      show-select
+    >
+      <template v-for="(col, i) in filters" v-slot:[`header.${i}`]="{ header }">
+        <div :key="i" style="display: inline-block; padding: 16px 0">
+          {{ header.text }}
+        </div>
+        <div :key="i" style="float: right; margin-top: 8px">
+          <v-menu
+            :close-on-content-click="false"
+            :nudge-width="200"
+            offset-y
+            transition="slide-y-transition"
+            left
+            fixed
+            style="position: absolute; right: 0"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn color="indigo" icon v-bind="attrs" v-on="on">
+                <v-icon
+                  small
+                  :color="
+                    activeFilters[header.value] &&
+                    activeFilters[header.value].length <
+                      filters[header.value].length
+                      ? 'red'
+                      : 'default'
+                  "
+                >
+                  mdi-filter-variant
+                </v-icon>
+              </v-btn>
+            </template>
+            <v-list flat dense class="pa-0">
+              <v-list-item-group
+                multiple
+                v-model="activeFilters[header.value]"
+                class="py-2"
+              >
+                <template>
+                  <v-list-item
+                    :value="item"
+                    :ripple="true"
+                    v-for="item in filters[header.value]"
+                    :key="`${item}`"
+                  >
+                    <template v-slot:default="{ active, toggle }">
+                      <v-list-item-action>
+                        <v-checkbox
+                          :input-value="active"
+                          :true-value="item"
+                          @click="toggle"
+                          color="primary"
+                          :ripple="true"
+                          dense
+                        ></v-checkbox>
+                      </v-list-item-action>
+                      <v-list-item-content>
+                        <v-list-item-title v-text="item"></v-list-item-title>
+                      </v-list-item-content>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-item-group>
+              <v-divider></v-divider>
+              <v-row no-gutters>
+                <v-col cols="6">
+                  <v-btn
+                    text
+                    block
+                    @click="toggleAll(header.value)"
+                    color="success"
+                    >Toggle all</v-btn
+                  >
+                </v-col>
+                <v-col cols="6">
+                  <v-btn
+                    text
+                    block
+                    @click="clearAll(header.value)"
+                    color="warning"
+                    >Clear all</v-btn
+                  >
+                </v-col>
+              </v-row>
+            </v-list>
+          </v-menu>
+        </div>
+      </template>
+    </v-data-table>
 
     <v-btn
       @click="prev"
@@ -115,18 +205,81 @@ export default {
       ],
       flatObjs: [],
       filteredFlatObjs: [],
-      headers: [],
+      // headers: [],
+      uniqueHeaderNames: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
       nextLoading: false,
       search: "",
+      dialog: false,
+      // filters: { 'type': [], 'family': [], 'elementId': [] },
+      activeFilters: {},
     };
   },
   watch: {
     limit() {
       // If the limit is changed, we need to reset the query
       if (this.selectedCategory) this.fetchCategories();
+    },
+  },
+  computed: {
+    filters() {
+      let tmp = {
+        type: [],
+        family: [],
+        elementId: [],
+      };
+      // this.uniqueHeaderNames.forEach((val) => tmp.push({
+      //   val: [],
+      // }));
+      return tmp;
+    },
+    headers() {
+      let tmp = [
+        {
+          text: "Type",
+          align: "start",
+          sortable: true,
+          value: "type",
+          filter: (value) => {
+            return this.activeFilters.type
+              ? this.activeFilters.type.includes(value)
+              : true;
+          },
+        },
+        {
+          text: "Family",
+          align: "start",
+          sortable: true,
+          value: "family",
+          filter: (value) => {
+            return this.activeFilters.family
+              ? this.activeFilters.family.includes(value)
+              : true;
+          },
+        },
+        {
+          text: "ElementId",
+          align: "start",
+          sortable: true,
+          value: "elementId",
+          filter: (value) => {
+            return this.activeFilters.elementId
+              ? this.activeFilters.elementId.includes(value)
+              : true;
+          },
+        },
+      ];
+      this.uniqueHeaderNames.forEach((val) =>
+        tmp.push({
+          text: val.replace("parameters.", "").replace(".value", ""),
+          align: "start",
+          sortable: true,
+          value: val,
+        })
+      );
+      return tmp;
     },
   },
   methods: {
@@ -186,6 +339,7 @@ export default {
       let res = await rawRes.json();
 
       let obj = res.data.stream.object;
+      console.log("obj:", obj);
 
       this.objects = obj.data;
       let tempCategories = Object.keys(this.objects).filter((cat) =>
@@ -236,22 +390,43 @@ export default {
       }
 
       // Create a unique list of all the headers.
-      const uniqueHeaderNames = new Set();
+      this.uniqueHeaderNames = new Set();
       this.flatObjs.forEach((o) => {
         console.log(o);
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
-            (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
-              ? uniqueHeaderNames.add(k)
+            !k.includes("type") &&
+            !k.includes("family") &&
+            !k.includes("elementId") &&
+            !k.includes("category") &&
+            (this.fieldsToShow.includes(k) ||
+              (k.startsWith("parameters") &&
+                !k.endsWith("applicationUnit") &&
+                !k.endsWith("applicationUnitType") &&
+                !k.endsWith("applicationId") &&
+                !k.endsWith("id") &&
+                !k.endsWith("totalChildrenCount") &&
+                !k.endsWith("units") &&
+                !k.endsWith("speckle_type") &&
+                !k.endsWith("isShared") &&
+                !k.endsWith("isReadOnly") &&
+                !k.endsWith("isTypeParameter") &&
+                !k.endsWith("applicationInternalName") &&
+                !k.endsWith("name")))
+              ? this.uniqueHeaderNames.add(k)
               : null //clean up this filtering!
         );
       });
 
-      this.headers = [];
-      uniqueHeaderNames.forEach((val) =>
-        this.headers.push({ text: val, value: val, sortable: true })
-      );
+      // uniqueHeaderNames.forEach((val) =>
+      //   this.headers.push({
+      //     text: val,
+      //     value: val,
+      //     sortable: true,
+      //     );
+
+      this.initFilters();
 
       this.totalCount = this.flatObjs.length;
 
@@ -260,6 +435,50 @@ export default {
 
       // const parameterUpdater = new ParameterUpdater(streamId);
       this.parameterUpdater.addObjects(this.flatObjs);
+    },
+    initFilters() {
+      for (let col in this.filters) {
+        this.filters[col] = this.flatObjs
+          .map((d) => {
+            return d[col];
+          })
+          .filter((value, index, self) => {
+            return self.indexOf(value) === index;
+          });
+      }
+      console.log("flatObjs:", this.flatObjs);
+
+      // TODO restore previous activeFilters before add/remove item
+      this.activeFilters = Object.assign({}, this.filters);
+      console.log(this.filters);
+      /*if (Object.keys(this.activeFilters).length === 0) this.activeFilters = Object.assign({}, this.filters)
+      else {
+        setTimeout(() => {
+          console.log(this.activeFilters)
+          //this.activeFilters = Object.assign({}, this.filters)
+        }, 1)
+      }*/
+    },
+
+    toggleAll(col) {
+      console.log("toggleAll");
+      this.activeFilters[col] = this.flatObjs
+        .map((d) => {
+          return d[col];
+        })
+        .filter((value, index, self) => {
+          return self.indexOf(value) === index;
+        });
+    },
+
+    clearAll(col) {
+      console.log("clearAll");
+      console.log(col);
+      this.activeFilters[col] = [];
+    },
+
+    changedCategory(category) {
+      this.selectedCategory = category;
     },
   },
 };
