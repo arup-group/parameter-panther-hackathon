@@ -315,9 +315,25 @@ export default {
     },
     activeFilters: {
       handler() {
-        console.log("changedActiveFlag");
+        let ids = [];
+        for (var index in this.flatObjs) {
+          var o = this.flatObjs[index];
+          if(!this.activeFilters["family"].includes(o["family"])) {
+            continue;
+          }
+          else if(!this.activeFilters["type"].includes(o["type"])) {
+            continue;
+          }
+          else if(!this.activeFilters["elementId"].includes(o["elementId"])) {
+            continue;
+          }
+          else if(!this.activeFilters["level"].includes(o["level"])) {
+            continue;
+          }
+          ids.push(o.id);
+        }
         this.rendererFilter = {
-        filterBy: { __parents: { includes: this.getIds() } },
+        filterBy: { __parents: { includes: ids } },
         ghostOthers: true,
       };
       this.$emit("applyFilter", this.rendererFilter);
