@@ -1,3 +1,5 @@
+import store from "@/store";
+
 export class SpeckleObject {
   constructor({ id, elementId, units, parameters }) {
     this.id = `${id}-ParameterUpdater-${new Date().getTime()}`;
@@ -6,7 +8,7 @@ export class SpeckleObject {
     this.globalParams = {
       id: `${parameters.id}-ParameterUpdater-${new Date().getTime()}`,
       speckle_type: parameters.speckle_type,
-      applicatoinId: parameters.applicatoinId,
+      applicationId: null,
       totalChildrenCount: parameters.totalChildrenCount,
     };
     const parameterArr = Object.values(parameters);
@@ -54,6 +56,9 @@ export class ParameterUpdater {
       id: o.id,
       units: o.units,
       elementId: o.elementId,
+      speckle_type: "Objects.BuiltElements.Revit.ParameterUpdater",
+      applicationId: "94033bc3dc3d835cc858-Objects.BuiltElements.Revit.ParameterUpdater",
+      totalChildrenCount: 0,
       parameters: {
         ...o.globalParams,
         ...o.parameters.reduce((a, v, i) => {
@@ -75,7 +80,7 @@ export class ParameterUpdater {
     await fetch(`https://v2.speckle.arup.com/objects/${this.streamid}`, {
       method: "POST",
       headers: {
-        Authorization: "Bearer cec55758d273f041819465820c8b5793d40231fb37",
+        Authorization: `Bearer ${store.state.token.token}`,
       },
       body: formData,
     });
@@ -97,14 +102,15 @@ export class ParameterUpdater {
     const parentObjform = new FormData();
     const parentObjData = {
       id: parentObjId,
-      "@Data": [
+      "@Data":
         [
           this.objects.map((o) => ({
             referencedId: o.id,
             speckle_type: "reference",
           })),
         ],
-      ],
+        speckle_type: "Base",
+        applicationId: null,
       __closure: Object.fromEntries(this.objects.map((o) => [o.id, 1])),
     };
     parentObjform.append("batch1", new Blob([JSON.stringify([parentObjData])]));
@@ -112,7 +118,7 @@ export class ParameterUpdater {
     await fetch(`https://v2.speckle.arup.com/objects/${this.streamid}`, {
       method: "POST",
       headers: {
-        Authorization: "Bearer cec55758d273f041819465820c8b5793d40231fb37",
+        Authorization: `Bearer ${store.state.token.token}`,
       },
       body: parentObjform,
     });
@@ -130,6 +136,8 @@ export class ParameterUpdater {
       }`;
 
     await speckleFetch(commitQuery);
+
+    console.log("done!");
   }
 }
 
@@ -139,7 +147,7 @@ export async function speckleFetch(query) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer cec55758d273f041819465820c8b5793d40231fb37",
+        Authorization: `Bearer ${store.state.token.token}`,
       },
       body: JSON.stringify({
         query: query,
