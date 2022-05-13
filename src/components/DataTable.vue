@@ -546,14 +546,26 @@ export default {
             !k.endsWith("name"))) {
               let isReadOnlyKey = k.replace("value", "isReadOnly");
               let isTypeParameterKey = k.replace("value", "isTypeParameter");
+              let nameKey = k.replace("value", "name");
+              let applicationInternalNameKey = k.replace("value", "applicationInternalName");
+
               let isReadOnly = o[isReadOnlyKey];
               let isTypeParameter = o[isTypeParameterKey];
+              let name = o[nameKey];
+              let applicationInternalName = o[applicationInternalNameKey];
+              let units = o["units"];
         
               if(!isReadOnly && !isTypeParameter) {
                 // console.log("isReadOnly:", isReadOnly);
                 // console.log("isTypeParameter:", isTypeParameter);
-                this.uniqueHeaderNames.add(k);
+                // this.uniqueHeaderNames.add(k);
                 // console.log("kept:", k);
+
+                let instanceParameterName = name + " | " + applicationInternalName;
+                if(units) {
+                  instanceParameterName = instanceParameterName + " [" + units + "]";
+                }
+                  this.instanceParameters.push(instanceParameterName);
               }
               else {
                 // console.log("dropped:", k);
@@ -564,8 +576,6 @@ export default {
         ids.push(o.id);
       }
       this.initFilters();
-
-      this.instanceParameters = [...this.uniqueHeaderNames].filter(header => !header.includes("id"));
 
       this.initFilters();
       this.totalCount = this.flatObjs.length;
@@ -583,6 +593,8 @@ export default {
         this.selectedInstanceParameters.includes(header)
       ).sort();
       this.uniqueHeaderNames = new Set(filteredHeaders);
+      let headerName = filteredHeaders.map(header => header.split("|")[0])  ;  
+      this.uniqueHeaderNames = new Set(headerName);
     },
     initFilters() {
       for (let col in this.filters) {
