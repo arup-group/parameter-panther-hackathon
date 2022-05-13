@@ -474,6 +474,7 @@ export default {
         let res = await rawRes.json();
 
         let obj = res.data.stream.object;
+        // console.log("obj.data:", obj.data);
 
         // Flatten the object!
         let flatObj = flat(obj.data, { safe: false });
@@ -485,9 +486,39 @@ export default {
 
       console.log("flatObjs:", this.flatObjs);
 
-      this.flatObjs.forEach((o) => {
+      // this.flatObjs.forEach((o) => {
+      //   Object.keys(o).forEach(
+      //     (k) =>
+      //       !k.includes("__closure") &&
+      //       !k.includes("type") &&
+      //       !k.includes("id") &&
+      //       !k.includes("family") &&
+      //       !k.includes("elementId") &&
+      //       !k.includes("category") &&
+      //       (k.startsWith("parameters") &&
+      //           !k.endsWith("applicationUnit") &&
+      //           !k.endsWith("applicationUnitType") &&
+      //           !k.endsWith("applicationId") &&
+      //           !k.endsWith("id") &&
+      //           !k.endsWith("totalChildrenCount") &&
+      //           !k.endsWith("units") &&
+      //           !k.endsWith("speckle_type") &&
+      //           !k.endsWith("isShared") &&
+      //           !k.endsWith("isReadOnly") &&
+      //           !k.endsWith("isTypeParameter") &&
+      //           !k.endsWith("applicationInternalName") &&
+      //           !k.endsWith("name"))
+      //         ? this.uniqueHeaderNames.add(k)
+      //         : null //clean up this filtering!
+      //   );
+      // });
+
+      for(var index in this.flatObjs) {
+        var o = this.flatObjs[index];
+
         Object.keys(o).forEach(
-          (k) =>
+          (k) => {
+            if(
             !k.includes("__closure") &&
             !k.includes("type") &&
             !k.includes("id") &&
@@ -495,22 +526,38 @@ export default {
             !k.includes("elementId") &&
             !k.includes("category") &&
             (k.startsWith("parameters") &&
-                !k.endsWith("applicationUnit") &&
-                !k.endsWith("applicationUnitType") &&
-                !k.endsWith("applicationId") &&
-                !k.endsWith("id") &&
-                !k.endsWith("totalChildrenCount") &&
-                !k.endsWith("units") &&
-                !k.endsWith("speckle_type") &&
-                !k.endsWith("isShared") &&
-                !k.endsWith("isReadOnly") &&
-                !k.endsWith("isTypeParameter") &&
-                !k.endsWith("applicationInternalName") &&
-                !k.endsWith("name"))
-              ? this.uniqueHeaderNames.add(k)
-              : null //clean up this filtering!
+            !k.endsWith("applicationUnit") &&
+            !k.endsWith("applicationUnitType") &&
+            !k.endsWith("applicationId") &&
+            !k.endsWith("id") &&
+            !k.endsWith("totalChildrenCount") &&
+            !k.endsWith("units") &&
+            !k.endsWith("speckle_type") &&
+            !k.endsWith("isShared") &&
+            !k.endsWith("isReadOnly") &&
+            !k.endsWith("isTypeParameter") &&
+            !k.endsWith("applicationInternalName") &&
+            !k.endsWith("name"))) {
+              let isReadOnlyKey = k.replace("value", "isReadOnly");
+              let isTypeParameterKey = k.replace("value", "isTypeParameter");
+              let isReadOnly = o[isReadOnlyKey];
+              let isTypeParameter = o[isTypeParameterKey];
+        
+              if(!isReadOnly && !isTypeParameter) {
+                // console.log("isReadOnly:", isReadOnly);
+                // console.log("isTypeParameter:", isTypeParameter);
+                this.uniqueHeaderNames.add(k);
+                // console.log("kept:", k);
+              }
+              else {
+                // console.log("dropped:", k);
+              }
+            }
+          }
         );
-      });
+      }
+      
+
       this.initFilters();
 
       this.totalCount = this.flatObjs.length;
