@@ -699,8 +699,14 @@ export default {
       const paramIdValArr = {};
       Object.entries(this.editedItem).forEach(([key, val]) => {
         const almostObjKey = key.replace("parameters.", "")
-        if (key.endsWith(".id") && !paramIdValArr[val]) paramIdValArr[almostObjKey.replace(".id", "")] = [val, -1];
-        else if (key.endsWith(".value")) paramIdValArr[almostObjKey.replace(".value", "")] = [paramIdValArr[almostObjKey.replace(".value", "")][0], val];
+        if (key.endsWith(".id") && !paramIdValArr[val]) {
+          const obj1 = paramIdValArr[almostObjKey.replace(".id", "")];
+          paramIdValArr[almostObjKey.replace(".id", "")] = [val, obj1 ? obj1[1] : -1];
+        }
+        else if (key.endsWith(".value")) {
+          const obj1 = paramIdValArr[almostObjKey.replace(".value", "")];
+          paramIdValArr[almostObjKey.replace(".value", "")] = [obj1 ? obj1[0] : -1, val]
+        }
       });
 
       Object.entries(paramIdValArr).forEach(([key, val]) => {
