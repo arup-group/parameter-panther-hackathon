@@ -28,6 +28,7 @@ const router = new VueRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
+  console.log("working?", to)
   if (to.query.access_code) {
     // If the route contains an access code, exchange it
     try {
@@ -41,15 +42,23 @@ router.beforeEach(async (to, from, next) => {
     if (to.name !== "Login") {
       // if the user is going to a page that isn't the login page, check that they're logged in
       try {
-        await store.dispatch("getUser");
+        console.log("in here")
+        const res = await store.dispatch("getUser");
+        console.log("res:", res);
         next();
+        console.log("got down here")
       } catch (err) {
+        console.log("redirecting");
         // redirect to login page if the user is not signed in
         next("/login");
         return;
+        // console.log("here? for some reason")
+        // if (err.message === "NOT_SIGNED_IN") next("/login");
+        // else next("/");
       }
     }
   }
+  console.log("got here");
   next();
 });
 
