@@ -7,7 +7,7 @@
           <data-table @setRenderer="setRenderer" @applyFilter="applyFilter" />
         </v-col>
         <v-col md="4">
-          <renderer :objectUrls="objectUrls" />
+          <renderer :objectUrls="objectUrls" :filter="filter" />
         </v-col>
       </v-row>
     </v-container>
@@ -34,6 +34,7 @@ export default {
   data() {
     return {
       objectUrls: [],
+      filter: [],
     };
   },
   methods: {
@@ -42,6 +43,7 @@ export default {
     },
     applyFilter(filter) {
       console.log("filter:", filter);
+      this.filter = filter;
     },
   }
 };

@@ -565,6 +565,8 @@ export default {
 
       this.totalCount = this.flatObjs.length;
 
+      this.$emit("applyFilter", { 'level': "Level 2", 'elementId': 198694 });
+
       // Last, signal that we're done loading!
       this.fetchLoading = false;
     },

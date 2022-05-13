@@ -205,6 +205,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    filter: {
+      type: Object,
+      default: null,
+    },
   },
   data() {
     return {
@@ -237,6 +241,9 @@ export default {
     objectUrls() {
       this.unloadData();
       this.load();
+    },
+    filter() {
+      this.applyFilter();
     },
   },
   mounted() {
@@ -311,6 +318,14 @@ export default {
       this.hasLoadedModel = false;
       this.loadProgress = 0;
       this.namedViews.splice(0, this.namedViews.length);
+    },
+    applyFilter() {
+      let appliedFilter = {
+        filterBy: this.filter,
+        ghostOthers: true,
+      };
+      console.log("appliedFilter:", appliedFilter);
+      window.__viewer.applyFilter(appliedFilter);
     },
   },
 };
