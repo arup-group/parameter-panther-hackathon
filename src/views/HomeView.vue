@@ -4,7 +4,7 @@
     <v-container mx-0>
       <v-row no-gutters>
         <v-col md="8">
-          <data-table @setRenderer="setRenderer" />
+          <data-table @setRenderer="setRenderer" @applyFilter="applyFilter" />
         </v-col>
         <v-col md="4">
           <renderer :objectUrls="objectUrls" />
@@ -39,7 +39,10 @@ export default {
   methods: {
     setRenderer(url) {
       this.objectUrls = [url];
-    }
+    },
+    applyFilter(filter) {
+      console.log("filter:", filter);
+    },
   }
 };
 </script>
