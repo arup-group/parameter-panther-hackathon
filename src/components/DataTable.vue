@@ -413,6 +413,8 @@ export default {
       });
     },
     async fetchCategories() {
+      this.$emit("setRenderer", this.url);
+
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
