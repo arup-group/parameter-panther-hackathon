@@ -375,6 +375,12 @@ export default {
           });
         }
       });
+
+      tmp.push({
+      text: "Id",
+      align: "start",
+      sortable: true,
+      value: "id",});
       return tmp;
     },
   },
@@ -486,6 +492,7 @@ export default {
 
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
+
       this.flatObjs.forEach((o) => {
         Object.keys(o).forEach(
           (k) =>
@@ -512,8 +519,11 @@ export default {
               : null //clean up this filtering!
         );
       });
-      // this.instanceParameters = [...this.uniqueHeaderNames].map(header => header.replace("parameters.", "").replace(".value",""));
-      this.instanceParameters = [...this.uniqueHeaderNames];
+
+      this.instanceParameters = [...this.uniqueHeaderNames].filter(header => !header.includes("id"));
+
+      // Reset headers initially to empty
+      this.uniqueHeaderNames = new Set();
 
       this.initFilters();
       this.totalCount = this.flatObjs.length;
@@ -527,7 +537,7 @@ export default {
     fetchInstanceParameters() {
       let filteredHeaders = this.instanceParameters.filter((header) =>
         this.selectedInstanceParameters.includes(header)
-      );
+      ).sort();
       this.uniqueHeaderNames = new Set(filteredHeaders);
     },
     initFilters() {
