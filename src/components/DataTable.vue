@@ -634,11 +634,11 @@ export default {
             return self.indexOf(value) === index;
           });
       }
-      console.log("flatObjs:", this.flatObjs);
+      // console.log("flatObjs:", this.flatObjs);
 
       // TODO restore previous activeFilters before add/remove item
       this.activeFilters = Object.assign({}, this.filters);
-      console.log(this.filters);
+      // console.log(this.filters);
       /*if (Object.keys(this.activeFilters).length === 0) this.activeFilters = Object.assign({}, this.filters)
       else {
         setTimeout(() => {
@@ -672,7 +672,7 @@ export default {
     },
     clearAll(col) {
       console.log("clearAll");
-      console.log(col);
+      // console.log(col);
       this.activeFilters[col] = [];
       this.rendererFilter = {
         filterBy: { __parents: { includes: [] } },
