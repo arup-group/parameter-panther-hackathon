@@ -282,7 +282,7 @@ export default {
       // filters: { 'type': [], 'family': [], 'elementId': [] },
       activeFilters: {},
       selectedItem: [],
-      filter: [],
+      rendererFilter: [],
       successSnackbar: false
     };
   },
@@ -581,11 +581,11 @@ export default {
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
-      this.filter = {
+      this.rendererFilter = {
         filterBy: { __parents: { includes: ids } },
         ghostOthers: true,
       };
-      this.$emit("applyFilter", this.filter);
+      this.$emit("applyFilter", this.rendererFilter);
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
@@ -637,11 +637,11 @@ export default {
         .filter((value, index, self) => {
           return self.indexOf(value) === index;
         });
-      this.filter = {
+      this.rendererFilter = {
         filterBy: { __parents: { includes: this.getIds() } },
         ghostOthers: true,
       };
-      this.$emit("applyFilter", this.filter);
+      this.$emit("applyFilter", this.rendererFilter);
     },
     clearAll(col) {
       console.log("clearAll");
