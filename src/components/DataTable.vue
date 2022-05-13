@@ -309,6 +309,7 @@ export default {
 
         this.editedItem = filteredFields;
         // this.editableFields = Object.keys(filteredFields);
+        console.log("uniqueHeaderNames 1:", this.uniqueHeaderNames);
         this.editableFields = this.uniqueHeaderNames;
       }
     },
@@ -642,7 +643,11 @@ export default {
       // this is not working!
       this.editedIndex = this.flatObjs.indexOf(matchingItem);
       this.editedItem = Object.assign({}, item);
+      console.log("editedItem 2:", this.editedItem)
       // console.log("editedIndex:", this.editedIndex);
+
+      // HERE
+      console.log("uniqueHeaderNames 2:", this.uniqueHeaderNames);
       this.editableFields = this.uniqueHeaderNames;
       this.dialog = true;
     },
@@ -667,15 +672,17 @@ export default {
         }
       }
       const paramIdValArr = {};
+      const updatedParams = Object.entries(this.editedItem).filter(([key]) => !key.includes(".") && key.includes(" ")).map(([key, val]) => [key.trim(), val]);
       Object.entries(this.editedItem).forEach(([key, val]) => {
-        const almostObjKey = key.replace("parameters.", "")
-        if (key.endsWith(".id") && !paramIdValArr[val]) {
-          const obj1 = paramIdValArr[almostObjKey.replace(".id", "")];
-          paramIdValArr[almostObjKey.replace(".id", "")] = [val, obj1 ? obj1[1] : -1];
-        }
-        else if (key.endsWith(".value")) {
-          const obj1 = paramIdValArr[almostObjKey.replace(".value", "")];
-          paramIdValArr[almostObjKey.replace(".value", "")] = [obj1 ? obj1[0] : -1, val]
+        if (key.endsWith(".name") && val) {
+          let id, value;
+          updatedParams.forEach(([ukey, uval]) => {
+            if (ukey === val) {
+              id = this.editedItem[key.replace(".name", ".id")]
+              value = uval;
+              paramIdValArr[key.replace("parameters.", "").replace(".name", "")] = [id, value];
+            }
+          })
         }
       });
 
