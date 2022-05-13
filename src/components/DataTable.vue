@@ -1,7 +1,6 @@
 <template>
   <v-container>
     <div class="mb-4">
-      <v-btn @click="paramUpdateTest">TEST</v-btn>
       <div>
         <v-row no-gutters>
           <v-col md="11">
@@ -210,6 +209,10 @@
       Curr items: {{ (cursors.length - 1) * limit }} Cursor:
       {{ cursors ? cursors : "n/a" }}
     </p>
+
+    <div style="width: 100%" class="d-flex justify-end">
+      <v-btn color="primary" @click="commitObjects" :disabled="commitObjectsDisabled">Save</v-btn>
+    </div>
   </v-container>
 </template>
 
@@ -288,6 +291,9 @@ export default {
     },
   },
   computed: {
+    commitObjectsDisabled() {
+      return this.parameterUpdater.objects.length === 0;
+    },
     filters() {
       let tmp = {
         // type: [],
@@ -371,13 +377,8 @@ export default {
       ); // fetch using the second last cursor
       this.prevLoading = false;
     },
-    paramUpdateTest() {
-      this.parameterUpdater.updateParam(
-        "001e4a317dff1b69fbaff7ed0a63fde5",
-        "cfef2a72708bd4ba727715d8c14991d0",
-        "THIS IS A NEW VALUE"
-      );
-      console.log(this.parameterUpdater);
+    commitObjects() {
+      this.parameterUpdater.commitObjects();
     },
     async fetchFromApi(query, variables, server) {
       return await fetch(new URL("/graphql", server), {
@@ -457,6 +458,7 @@ export default {
         let res = await rawRes.json();
 
         let obj = res.data.stream.object;
+        this.parameterUpdater.addObjects([obj]);
 
         // Flatten the object!
         let flatObj = flat(obj.data, { safe: false });
@@ -497,9 +499,6 @@ export default {
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
-
-      // const parameterUpdater = new ParameterUpdater(streamId);
-      this.parameterUpdater.addObjects(this.flatObjs);
     },
     initFilters() {
       for (let col in this.filters) {
