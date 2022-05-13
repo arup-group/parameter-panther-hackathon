@@ -282,6 +282,7 @@ export default {
       // filters: { 'type': [], 'family': [], 'elementId': [] },
       activeFilters: {},
       selectedItem: [],
+      rendererFilter: [],
       successSnackbar: false
     };
   },
@@ -312,6 +313,33 @@ export default {
         this.editableFields = this.uniqueHeaderNames;
       }
     },
+    activeFilters: {
+      handler() {
+        let ids = [];
+        for (var index in this.flatObjs) {
+          var o = this.flatObjs[index];
+          if(!this.activeFilters["family"].includes(o["family"])) {
+            continue;
+          }
+          else if(!this.activeFilters["type"].includes(o["type"])) {
+            continue;
+          }
+          else if(!this.activeFilters["elementId"].includes(o["elementId"])) {
+            continue;
+          }
+          else if(!this.activeFilters["level"].includes(o["level"])) {
+            continue;
+          }
+          ids.push(o.id);
+        }
+        this.rendererFilter = {
+        filterBy: { __parents: { includes: ids } },
+        ghostOthers: true,
+      };
+      this.$emit("applyFilter", this.rendererFilter);
+     },
+     deep: true
+    },
   },
   computed: {
     commitObjectsDisabled() {
@@ -324,12 +352,12 @@ export default {
         type: [],
         level: [],
       };
-      this.uniqueHeaderNames.forEach(() => {
-        tmp = {
-          ...tmp,
-          val: []
-        }
-      });
+      // this.uniqueHeaderNames.forEach(() => {
+      //   tmp = {
+      //     ...tmp,
+      //     val: []
+      //   }
+      // });
       return tmp;
     },
     headers() {
@@ -580,11 +608,11 @@ export default {
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
-      let filter = {
+      this.rendererFilter = {
         filterBy: { __parents: { includes: ids } },
         ghostOthers: true,
       };
-      this.$emit("applyFilter", filter);
+      this.$emit("applyFilter", this.rendererFilter);
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
@@ -593,7 +621,7 @@ export default {
       let filteredHeaders = this.instanceParameters
         .filter((header) => this.selectedInstanceParameters.includes(header))
         .sort();
-      let headerName = filteredHeaders.map(header => header.split("|")[0])  ;  
+      let headerName = filteredHeaders.map(header => header.split("|")[0]);
       this.uniqueHeaderNames = new Set(headerName);
     },
     initFilters() {
@@ -606,11 +634,11 @@ export default {
             return self.indexOf(value) === index;
           });
       }
-      console.log("flatObjs:", this.flatObjs);
+      // console.log("flatObjs:", this.flatObjs);
 
       // TODO restore previous activeFilters before add/remove item
       this.activeFilters = Object.assign({}, this.filters);
-      console.log(this.filters);
+      // console.log(this.filters);
       /*if (Object.keys(this.activeFilters).length === 0) this.activeFilters = Object.assign({}, this.filters)
       else {
         setTimeout(() => {
@@ -618,6 +646,14 @@ export default {
           //this.activeFilters = Object.assign({}, this.filters)
         }, 1)
       }*/
+    },
+    getIds() {
+      let ids = [];
+      for (var index in this.flatObjs) {
+        var o = this.flatObjs[index];
+        ids.push(o.id);
+      }
+      return ids;
     },
     toggleAll(col) {
       console.log("toggleAll");
@@ -628,11 +664,21 @@ export default {
         .filter((value, index, self) => {
           return self.indexOf(value) === index;
         });
+      this.rendererFilter = {
+        filterBy: { __parents: { includes: this.getIds() } },
+        ghostOthers: true,
+      };
+      this.$emit("applyFilter", this.rendererFilter);
     },
     clearAll(col) {
       console.log("clearAll");
-      console.log(col);
+      // console.log(col);
       this.activeFilters[col] = [];
+      this.rendererFilter = {
+        filterBy: { __parents: { includes: [] } },
+        ghostOthers: true,
+      };
+      this.$emit("applyFilter", this.rendererFilter);
     },
     editItem(item) {
       // console.log("editItem()");
