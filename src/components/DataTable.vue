@@ -325,12 +325,12 @@ export default {
         type: [],
         level: [],
       };
-      this.uniqueHeaderNames.forEach(() => {
-        tmp = {
-          ...tmp,
-          val: []
-        }
-      });
+      // this.uniqueHeaderNames.forEach(() => {
+      //   tmp = {
+      //     ...tmp,
+      //     val: []
+      //   }
+      // });
       return tmp;
     },
     headers() {
@@ -594,7 +594,7 @@ export default {
       let filteredHeaders = this.instanceParameters
         .filter((header) => this.selectedInstanceParameters.includes(header))
         .sort();
-      let headerName = filteredHeaders.map(header => header.split("|")[0])  ;  
+      let headerName = filteredHeaders.map(header => header.split("|")[0]);
       this.uniqueHeaderNames = new Set(headerName);
     },
     initFilters() {
