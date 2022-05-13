@@ -518,6 +518,9 @@ export default {
       //   );
       // });
 
+
+      let ids = [];
+
       for(var index in this.flatObjs) {
         var o = this.flatObjs[index];
 
@@ -560,12 +563,16 @@ export default {
             }
           }
         );
+        ids.push(o.id);
       }
       this.initFilters();
 
       this.totalCount = this.flatObjs.length;
 
-      this.$emit("applyFilter", { 'level': "Level 2", 'elementId': 198694 });
+      let filter = {
+        "filterBy": { "__parents": { "includes": ids }},
+        "ghostOthers": true };
+      this.$emit("applyFilter", filter);
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;

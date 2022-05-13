@@ -320,12 +320,8 @@ export default {
       this.namedViews.splice(0, this.namedViews.length);
     },
     applyFilter() {
-      let appliedFilter = {
-        filterBy: this.filter,
-        ghostOthers: true,
-      };
-      console.log("appliedFilter:", appliedFilter);
-      window.__viewer.applyFilter(appliedFilter);
+      // console.log("this.filter:", this.filter);
+      window.__viewer.applyFilter(this.filter);
     },
   },
 };
