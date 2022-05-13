@@ -301,13 +301,13 @@ export default {
       if (!this.objectUrls || this.objectUrls.length === 0) return;
       this.hasLoadedModel = true;
       this.objectUrls?.forEach((url) => {
-        window.__viewer.loadObject(url);
+        window.__viewer.loadObject(url, this.$store.state.token.token);
         window.__viewerLastLoadedUrl = url;
       });
       this.setupEvents();
     },
     unloadData() {
-      window.__viewer.sceneManager.removeAllObjects();
+      // window.__viewer.sceneManager.removeAllObjects();
       this.hasLoadedModel = false;
       this.loadProgress = 0;
       this.namedViews.splice(0, this.namedViews.length);
