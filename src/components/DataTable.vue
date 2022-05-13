@@ -12,50 +12,16 @@
         elevation="2"
         color="primary"
         :loading="fetchLoading && !prevLoading && !nextLoading"
-        @click="fetchChildren"
+        @click="fetchCategories"
         >Fetch
       </v-btn>
-      <v-select
+      <v-autocomplete
+        v-model="selectedCategory"
         :items="categories"
         label="Categories"
-        @input="changedCategory"
+        @input="fetchCategoryObjects"
         dense
       />
-      <!-- <v-card-text class="pl-0"
-        >Categories:
-        <v-chip
-          v-for="c in categories"
-          :key="c"
-          v-model="categories"
-          @input="onClose(tag)"
-          @click="pushSelected(c)"
-          close=""
-          >
-          {{ c }}
-        </v-chip>
-      </v-card-text>
-      <v-card-text class="pl-0"
-        >Families:
-        <v-chip
-          v-for="f in families"
-          :key="f"
-          v-model="families"
-          @input="onClose(tag)"
-          close
-          >{{ f }}
-        </v-chip>
-      </v-card-text>
-      <v-card-text class="pl-0"
-        >Types:
-        <v-chip
-          v-for="t in types"
-          :key="t"
-          v-model="types"
-          @input="onClose(tag)"
-          close
-          >{{ t }}
-        </v-chip>
-      </v-card-text> -->
     </div>
 
     <p class="caption">
@@ -110,6 +76,7 @@
 
 <script>
 import flat from "flat";
+import { objectQuery } from "@/queries";
 
 export default {
   name: "DataTable",
@@ -125,6 +92,8 @@ export default {
       types: ["None"],
       // select:
       //   '["speckle_type","id", "elementId", "category", "family", "type", "parameters.HOST_AREA_COMPUTED.value", "parameters.HOST_VOLUME_COMPUTED.value"]',
+      query:
+        '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
       cursors: [],
       fieldsToShow: [
         "speckle_type",
@@ -141,40 +110,32 @@ export default {
       fetchLoading: false,
       prevLoading: false,
       nextLoading: false,
-      search: "",
+      search: ""
     };
   },
   watch: {
     limit() {
       // If the limit is changed, we need to reset the query
-      this.fetchChildren();
-    },
-  },
-  computed: {
-    query() {
-      return `[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]`;
+      if(this.selectedCategory) this.fetchCategories();
     },
   },
   methods: {
     async next() {
       this.nextLoading = true;
-      await this.fetchChildren(false, this.cursors[this.cursors.length - 1]);
+      await this.fetchCategories(false, this.cursors[this.cursors.length - 1]);
       this.nextLoading = false;
     },
     async prev() {
       this.prevLoading = true;
       await this.cursors.pop(); // remove last cursor
-      await this.fetchChildren(
+      await this.fetchCategories(
         false,
         this.cursors[this.cursors.length - 2],
         false
       ); // fetch using the second last cursor
       this.prevLoading = false;
     },
-
-    async fetchChildren() {
-      // cleanCursor = true,
-      // appendCursor = true
+    async fetchCategories() {
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
@@ -182,7 +143,7 @@ export default {
       const objectId = url.pathname.split("/")[4];
 
       // Get the gql query string.
-      const query = this.getCategoryQuery(streamId, objectId);
+      const query = objectQuery(streamId, objectId);
 
       // Set loading status
       this.fetchLoading = true;
@@ -200,26 +161,11 @@ export default {
       let tempCategories = Object.keys(this.objects).filter((cat) =>
         cat.startsWith("@")
       );
-      this.categories = tempCategories.map((cat) => cat.slice(1)).sort();
+      this.categories = tempCategories
+        .map((cat) => cat.slice(1))
+        .filter((c) => !c.startsWith("<"))
+        .sort();
 
-      // this.totalCount = obj.children.totalCount;
-
-      // Cursor management.
-      // if (cleanCursor) this.cursors = [null];
-      // if (appendCursor) this.cursors.push(obj.children.cursor);
-
-      // const uniqueCategories = new Set();
-      // const uniqueFamilies = new Set();
-      // const uniqueTypes = new Set();
-      // this.flatObjs.forEach((o) => {
-      //   if(o.category) uniqueCategories.add(o.category);
-      //   if(o.family) uniqueFamilies.add(o.family);
-      //   if(o.type) uniqueTypes.add(o.type);
-      // });
-
-      // this.categories = Array.from(uniqueCategories)
-      // this.families = Array.from(uniqueFamilies)
-      // this.types = Array.from(uniqueTypes)
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
@@ -236,45 +182,22 @@ export default {
         }),
       });
     },
-    getCategoryQuery(streamId, objectId) {
-      return `
-          query
-          {
-            stream( id: "${streamId}" ) 
-            {
-              object( id: "${objectId}" ) 
-              {
-                data
-              }
-            }
-          }
-        `;
-    },
-    getQuery(streamId, objectId) {
-      return `
-        query{
-          stream( id: "${streamId}" ) {
-            object( id: "${objectId}" ) {
-              data
-            }
-          }
-        }
-      `;
-    },
-    async changedCategory(category) {
+    async fetchCategoryObjects(category) {
+      // Set loading status
+      this.fetchLoading = true;
+
       this.flatObjs = [];
       this.selectedCategory = category;
 
       let objs = this.objects[`@${category}`];
-
-      let referenceIds = objs.map((o) => o["referencedId"]);
+      let referencedIds = objs.map((o) => o["referencedId"]);
 
       const url = new URL(this.url);
       const server = url.origin;
       const streamId = url.pathname.split("/")[2];
 
-      referenceIds.forEach(async (ref) => {
-        let query = this.getQuery(streamId, ref);
+      for (const objectId of referencedIds) {
+        let query = objectQuery(streamId, objectId);
 
         let variables = {
           limit: this.limit,
@@ -289,28 +212,33 @@ export default {
 
         let obj = res.data.stream.object;
 
-        // Flatten the objects!
-        this.flatObjs.push(flat(obj.data, { safe: false }));
-      });
+        // Flatten the object!
+        let flatObj = flat(obj.data, { safe: false });
+        this.flatObjs.push(flatObj);
+      }
 
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
-      this.flatObjs.forEach((o) =>{ console.log(o);
+      this.flatObjs.forEach((o) => {
+        console.log(o);
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
             (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
               ? uniqueHeaderNames.add(k)
               : null //clean up this filtering!
-        )}
-      );
-
-      console.log(uniqueHeaderNames);
+        );
+      });
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
         this.headers.push({ text: val, value: val, sortable: true })
       );
+
+      this.totalCount = this.filteredFlatObjs.length;
+
+      // Last, signal that we're done loading!
+      this.fetchLoading = false;
     },
   },
 };
