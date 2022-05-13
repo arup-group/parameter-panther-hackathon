@@ -31,7 +31,12 @@ jobs:
       - run: npm run build
         env:
           NODE_ENV: production
-
+          VUE_APP_SPECKLE_ID_ARUP: ${{ secrets.VUE_APP_SPECKLE_ID_ARUP }}
+          VUE_APP_SPECKLE_SECRET_ARUP: ${{ secrets.VUE_APP_SPECKLE_SECRET_ARUP }}
+          VUE_APP_SPECKLE_ID_XYZ: ${{ secrets.VUE_APP_SPECKLE_ID_XYZ }}
+          VUE_APP_SPECKLE_SECRET_XYZ: ${{ secrets.VUE_APP_SPECKLE_SECRET_XYZ }}
+          VUE_APP_SPECKLE_NAME: ${{ secrets.VUE_APP_SPECKLE_NAME }}
+          
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
