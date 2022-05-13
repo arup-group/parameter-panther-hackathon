@@ -648,20 +648,24 @@ export default {
       });
     },
     save() {
-      // console.log("save");
-      // console.log("editedItem:", this.editedItem);
       for(var index in this.flatObjs) {
         var obj = this.flatObjs[index];
         if(obj.id === this.editedItem.id) {
           this.editedIndex = index;
         }
       }
-      // console.log("editedIndex:", this.editedIndex)
-      Object.entries(this.editedItem).forEach(
-        (k, v) => {
-          this.parameterUpdater.updateParam(this.editedIndex, k, v);
-        }
-      );
+      const paramIdValArr = {};
+      Object.entries(this.editedItem).forEach(([key, val]) => {
+        const almostObjKey = key.replace("parameters.", "")
+        if (key.endsWith(".id") && !paramIdValArr[val]) paramIdValArr[almostObjKey.replace(".id", "")] = [val, -1];
+        else if (key.endsWith(".value")) paramIdValArr[almostObjKey.replace(".value", "")] = [paramIdValArr[almostObjKey.replace(".value", "")][0], val];
+      });
+
+      Object.entries(paramIdValArr).forEach(([key, val]) => {
+        key;
+        this.parameterUpdater.updateParam(this.editedItem.id, val[0], val[1]);
+      });
+      console.log("parameterUpdater:", this.parameterUpdater);
       if (this.editedIndex > -1) {
         Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
       } else {
