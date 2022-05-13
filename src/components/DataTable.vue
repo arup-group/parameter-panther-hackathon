@@ -36,6 +36,27 @@
       Total count: {{ totalCount ? totalCount : "unknown" }}
     </p>
 
+    <v-card-title> Revit Instance Parameters </v-card-title>
+    <v-autocomplete
+      v-model="selectedInstanceParameters"
+      :items="instanceParameters"
+      label="Instance parameters"
+      @input="fetchInstanceParameters"
+      multiple
+    >
+      <template slot="selection" slot-scope="data">
+        <v-chip :selected="data.selected" class="chip--select">
+          {{ data.item.replace("parameters.", "").replace(".value", "") }}
+        </v-chip>
+      </template>
+      <template slot="item" slot-scope="data">
+        <v-list-tile-content>
+          <v-list-tile-title
+            v-html="data.item.replace('parameters.', '').replace('.value', '')"
+          ></v-list-tile-title>
+        </v-list-tile-content>
+      </template>
+    </v-autocomplete>
     <v-card-title>
       Search:
       <v-spacer></v-spacer>
@@ -182,10 +203,9 @@
           </v-dialog>
         </v-toolbar>
       </template>
-      <!-- <template v-slot:[`item.actions`]="{ item }">
+      <template v-slot:[`item.actions`]="{ item }">
         <v-icon small class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
-        <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
-      </template> -->
+      </template>
     </v-data-table>
 
     <v-btn
@@ -211,7 +231,12 @@
     </p>
 
     <div style="width: 100%" class="d-flex justify-end">
-      <v-btn color="primary" @click="commitObjects" :disabled="commitObjectsDisabled">Save</v-btn>
+      <v-btn
+        color="primary"
+        @click="commitObjects"
+        :disabled="commitObjectsDisabled"
+        >Save</v-btn
+      >
     </div>
   </v-container>
 </template>
@@ -239,19 +264,22 @@ export default {
         '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
       cursors: [],
       fieldsToShow: [
-        "speckle_type",
-        "id",
-        "elementId",
-        "category",
-        "family",
-        "type",
+        // "speckle_type",
+        // "id",
+        // "elementId",
+        // "category",
+        // "family",
+        // "type",
       ],
       flatObjs: [],
       filteredFlatObjs: [],
       editedItem: {},
       editableFields: [],
+      editedIndex: -1,
       // headers: [],
       uniqueHeaderNames: [],
+      instanceParameters: [],
+      selectedInstanceParameters: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
@@ -286,7 +314,8 @@ export default {
           }, {});
 
         this.editedItem = filteredFields;
-        this.editableFields = Object.keys(filteredFields);
+        // this.editableFields = Object.keys(filteredFields);
+        this.editableFields = this.uniqueHeaderNames;
       }
     },
   },
@@ -296,9 +325,10 @@ export default {
     },
     filters() {
       let tmp = {
-        // type: [],
-        // family: [],
         // elementId: [],
+        // family: [],
+        // type: [],
+        // level: [],
       };
       // this.uniqueHeaderNames.forEach((val) => tmp.push({
       //   val: [],
@@ -307,22 +337,11 @@ export default {
     },
     headers() {
       let tmp = [
-        // {
-        //   text: "Action",
-        //   align: "start",
-        //   sortable: false,
-        //   value: "action",
-        // },
         {
-          text: "Type",
+          text: 'Edit',
           align: "start",
-          sortable: true,
-          value: "type",
-          filter: (value) => {
-            return this.activeFilters.type
-              ? this.activeFilters.type.includes(value)
-              : true;
-          },
+          sortable: false,
+          value: 'actions',
         },
         {
           text: "Family",
@@ -331,7 +350,18 @@ export default {
           value: "family",
           filter: (value) => {
             return this.activeFilters.family
-              ? this.activeFilters.family.includes(value)
+            ? this.activeFilters.family.includes(value)
+            : true;
+          },
+        },
+        {
+          text: "Type",
+          align: "start",
+          sortable: true,
+          value: "type",
+          filter: (value) => {
+            return this.activeFilters.type
+              ? this.activeFilters.type.includes(value)
               : true;
           },
         },
@@ -346,8 +376,18 @@ export default {
               : true;
           },
         },
+        {
+          text: "Level",
+          align: "start",
+          sortable: true,
+          value: "level.name",
+          // filter: (value) => {
+          //   return this.activeFilters.level
+          //     ? this.activeFilters.level.includes(value)
+          //     : true;
+          // },
+        },
       ];
-
       this.uniqueHeaderNames.forEach((val) => {
         if (val) {
           tmp.push({
@@ -358,6 +398,12 @@ export default {
           });
         }
       });
+        tmp.push({
+          text: "Id",
+          align: "start",
+          sortable: true,
+          value: "id",
+        });
       return tmp;
     },
   },
@@ -393,6 +439,8 @@ export default {
       });
     },
     async fetchCategories() {
+      this.$emit("setRenderer", this.url);
+
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
@@ -456,6 +504,7 @@ export default {
         let res = await rawRes.json();
 
         let obj = res.data.stream.object;
+        // console.log("obj.data:", obj.data);
         this.parameterUpdater.addObjects([obj]);
 
         // Flatten the object!
@@ -465,38 +514,78 @@ export default {
 
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
-      this.flatObjs.forEach((o) => {
+
+      console.log("flatObjs:", this.flatObjs);
+
+      let ids = [];
+
+      for(var index in this.flatObjs) {
+        var o = this.flatObjs[index];
+
         Object.keys(o).forEach(
-          (k) =>
+          (k) => {
+            if(
             !k.includes("__closure") &&
             !k.includes("type") &&
+            !k.includes("id") &&
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
-            (this.fieldsToShow.includes(k) ||
-              (k.startsWith("parameters") &&
-                !k.endsWith("applicationUnit") &&
-                !k.endsWith("applicationUnitType") &&
-                !k.endsWith("applicationId") &&
-                !k.endsWith("id") &&
-                !k.endsWith("totalChildrenCount") &&
-                !k.endsWith("units") &&
-                !k.endsWith("speckle_type") &&
-                !k.endsWith("isShared") &&
-                !k.endsWith("isReadOnly") &&
-                !k.endsWith("isTypeParameter") &&
-                !k.endsWith("applicationInternalName") &&
-                !k.endsWith("name")))
-              ? this.uniqueHeaderNames.add(k)
-              : null //clean up this filtering!
+            (k.startsWith("parameters") &&
+            !k.endsWith("applicationUnit") &&
+            !k.endsWith("applicationUnitType") &&
+            !k.endsWith("applicationId") &&
+            !k.endsWith("id") &&
+            !k.endsWith("totalChildrenCount") &&
+            !k.endsWith("units") &&
+            !k.endsWith("speckle_type") &&
+            !k.endsWith("isShared") &&
+            !k.endsWith("isReadOnly") &&
+            !k.endsWith("isTypeParameter") &&
+            !k.endsWith("applicationInternalName") &&
+            !k.endsWith("name"))) {
+              let isReadOnlyKey = k.replace("value", "isReadOnly");
+              let isTypeParameterKey = k.replace("value", "isTypeParameter");
+              let isReadOnly = o[isReadOnlyKey];
+              let isTypeParameter = o[isTypeParameterKey];
+        
+              if(!isReadOnly && !isTypeParameter) {
+                // console.log("isReadOnly:", isReadOnly);
+                // console.log("isTypeParameter:", isTypeParameter);
+                this.uniqueHeaderNames.add(k);
+                // console.log("kept:", k);
+              }
+              else {
+                // console.log("dropped:", k);
+              }
+            }
+          }
         );
-      });
+        ids.push(o.id);
+      }
       this.initFilters();
 
+      this.instanceParameters = [...this.uniqueHeaderNames].filter(header => !header.includes("id"));
+
+      // Reset headers initially to empty
+      this.uniqueHeaderNames = new Set();
+
+      this.initFilters();
       this.totalCount = this.flatObjs.length;
+
+      let filter = {
+        "filterBy": { "__parents": { "includes": ids }},
+        "ghostOthers": true };
+      this.$emit("applyFilter", filter);
 
       // Last, signal that we're done loading!
       this.fetchLoading = false;
+    },
+    fetchInstanceParameters() {
+      let filteredHeaders = this.instanceParameters.filter((header) =>
+        this.selectedInstanceParameters.includes(header)
+      ).sort();
+      this.uniqueHeaderNames = new Set(filteredHeaders);
     },
     initFilters() {
       for (let col in this.filters) {
@@ -537,12 +626,15 @@ export default {
       this.activeFilters[col] = [];
     },
     editItem(item) {
+      // console.log("editItem()");
       let matchingItem = this.flatObjs.filter((obj) => {
         return obj.id === item.id;
       });
+      // this is not working!
       this.editedIndex = this.flatObjs.indexOf(matchingItem);
-      console.log(this.editedIndex);
-      // this.editedItem = Object.assign({}, item);
+      this.editedItem = Object.assign({}, item);
+      // console.log("editedIndex:", this.editedIndex);
+      this.editableFields = this.uniqueHeaderNames;
       this.dialog = true;
     },
     deleteItem(item) {
@@ -558,9 +650,21 @@ export default {
         this.editedIndex = -1;
       });
     },
-
     save() {
-      console.log(this.editedItem);
+      // console.log("save");
+      // console.log("editedItem:", this.editedItem);
+      for(var index in this.flatObjs) {
+        var obj = this.flatObjs[index];
+        if(obj.id === this.editedItem.id) {
+          this.editedIndex = index;
+        }
+      }
+      // console.log("editedIndex:", this.editedIndex)
+      Object.entries(this.editedItem).forEach(
+        (k, v) => {
+          this.parameterUpdater.updateParam(this.editedIndex, k, v);
+        }
+      );
       if (this.editedIndex > -1) {
         Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
       } else {

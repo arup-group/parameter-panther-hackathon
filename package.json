@@ -8,8 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@speckle/objectloader": "2.2.0",
-    "@speckle/viewer": "2.2.6",
+    "@speckle/viewer": "2.5.5",
     "core-js": "^3.8.3",
     "flat": "^5.0.2",
     "graphql": "^16.5.0",
