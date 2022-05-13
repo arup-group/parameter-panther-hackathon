@@ -38,6 +38,19 @@
     </p>
 
     <v-card-title>
+      Revit Instance Parameters
+    </v-card-title>
+    <v-autocomplete
+      v-model="selectedInstanceParameters"
+      :items="instanceParameters"
+      :item-text="(item) => item.replace('parameters.', '').replace('.value','')"
+      :item-value="(item) => item"
+      label="Instance parameters"
+      @input="fetchInstanceParameters"
+      multiple
+    ></v-autocomplete>
+    <!-- replace("parameters.", "").replace(".value","") -->
+    <v-card-title>
       Search:
       <v-spacer></v-spacer>
       <v-text-field
@@ -249,6 +262,8 @@ export default {
       editableFields: [],
       // headers: [],
       uniqueHeaderNames: [],
+      instanceParameters: [],
+      selectedInstanceParameters: [],
       limit: 10,
       fetchLoading: false,
       prevLoading: false,
@@ -489,8 +504,11 @@ export default {
               : null //clean up this filtering!
         );
       });
-      this.initFilters();
+      // this.instanceParameters = [...this.uniqueHeaderNames].map(header => header.replace("parameters.", "").replace(".value",""));
+      this.instanceParameters = [...this.uniqueHeaderNames];
 
+      
+      this.initFilters();
       this.totalCount = this.flatObjs.length;
 
       // Last, signal that we're done loading!
@@ -498,6 +516,20 @@ export default {
 
       // const parameterUpdater = new ParameterUpdater(streamId);
       this.parameterUpdater.addObjects(this.flatObjs);
+    },
+    fetchInstanceParameters(){
+    // this.uniqueHeaderNames = this.uniqueHeaderNames.forEach((o) => {
+    //         Object.keys(o).forEach(
+    //           (k) =>
+    //             this.selectedInstanceParameters.includes(k)
+    //               ? this.uniqueHeaderNames.add(k)
+    //               : null //clean up this filtering!
+    //         );
+    //       });
+    //       console.log(this.uniqueHeaderNames);
+
+    let filteredHeaders = [...this.uniqueHeaderNames].filter(header => this.selectedInstanceParameters.includes(header));
+    console.log(filteredHeaders);
     },
     initFilters() {
       for (let col in this.filters) {
