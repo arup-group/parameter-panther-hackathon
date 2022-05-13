@@ -505,11 +505,14 @@ export default {
 
         let obj = res.data.stream.object;
         // console.log("obj.data:", obj.data);
-        this.parameterUpdater.addObjects([obj]);
+        // filter RevitElementTypes
+        if(!obj.data["speckle_type"].endsWith("RevitElementType")) {
+          this.parameterUpdater.addObjects([obj]);
 
-        // Flatten the object!
-        let flatObj = flat(obj.data, { safe: false });
-        this.flatObjs.push(flatObj);
+          // Flatten the object!
+          let flatObj = flat(obj.data, { safe: false });
+          this.flatObjs.push(flatObj);
+        }
       }
 
       // Create a unique list of all the headers.
