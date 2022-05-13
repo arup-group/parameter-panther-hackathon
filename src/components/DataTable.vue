@@ -514,23 +514,23 @@ export default {
       // Create a unique list of all the headers.
       this.uniqueHeaderNames = new Set();
 
-      console.log("flatObjs:", this.flatObjs);
+      // console.log("flatObjs:", this.flatObjs);
 
       let ids = [];
 
-      for (var index in this.flatObjs) {
+      for(var index in this.flatObjs) {
         var o = this.flatObjs[index];
 
-        Object.keys(o).forEach((k) =>
-        {
-          if (
+        Object.keys(o).forEach(
+          (k) => {
+            if(
             !k.includes("__closure") &&
             !k.includes("type") &&
             !k.includes("id") &&
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
-            k.startsWith("parameters") &&
+            (k.startsWith("parameters") &&
             !k.endsWith("applicationUnit") &&
             !k.endsWith("applicationUnitType") &&
             !k.endsWith("applicationId") &&
@@ -542,8 +542,7 @@ export default {
             !k.endsWith("isReadOnly") &&
             !k.endsWith("isTypeParameter") &&
             !k.endsWith("applicationInternalName") &&
-            !k.endsWith("name"))
-            {
+            !k.endsWith("name"))) {
               let isReadOnlyKey = k.replace("value", "isReadOnly");
               let isTypeParameterKey = k.replace("value", "isTypeParameter");
               let nameKey = k.replace("value", "name");
@@ -565,17 +564,16 @@ export default {
                 if(units) {
                   instanceParameterName = instanceParameterName + " [" + units + "]";
                 }
-                this.instanceParameters.push(instanceParameterName);
+                  this.instanceParameters.push(instanceParameterName);
               }
               else {
                 // console.log("dropped:", k);
               }
             }
-        )};
+          }
+        );
         ids.push(o.id);
       }
-      this.initFilters();
-
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
