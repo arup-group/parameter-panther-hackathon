@@ -518,18 +518,8 @@ export default {
       this.parameterUpdater.addObjects(this.flatObjs);
     },
     fetchInstanceParameters(){
-    // this.uniqueHeaderNames = this.uniqueHeaderNames.forEach((o) => {
-    //         Object.keys(o).forEach(
-    //           (k) =>
-    //             this.selectedInstanceParameters.includes(k)
-    //               ? this.uniqueHeaderNames.add(k)
-    //               : null //clean up this filtering!
-    //         );
-    //       });
-    //       console.log(this.uniqueHeaderNames);
-
-    let filteredHeaders = [...this.uniqueHeaderNames].filter(header => this.selectedInstanceParameters.includes(header));
-    console.log(filteredHeaders);
+    let filteredHeaders = this.instanceParameters.filter(header => this.selectedInstanceParameters.includes(header));
+    this.uniqueHeaderNames = new Set(filteredHeaders);
     },
     initFilters() {
       for (let col in this.filters) {
