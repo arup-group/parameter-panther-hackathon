@@ -248,6 +248,7 @@ export default {
       filteredFlatObjs: [],
       editedItem: {},
       editableFields: [],
+      editedIndex: -1,
       // headers: [],
       uniqueHeaderNames: [],
       limit: 10,
@@ -556,8 +557,6 @@ export default {
           }
         );
       }
-      
-
       this.initFilters();
 
       this.totalCount = this.flatObjs.length;
@@ -607,11 +606,14 @@ export default {
       this.activeFilters[col] = [];
     },
     editItem(item) {
+      // console.log("editItem()");
       let matchingItem = this.flatObjs.filter((obj) => {
         return obj.id === item.id;
       });
+      // this is not working!
       this.editedIndex = this.flatObjs.indexOf(matchingItem);
       this.editedItem = Object.assign({}, item);
+      // console.log("editedIndex:", this.editedIndex);
       this.editableFields = this.uniqueHeaderNames;
       this.dialog = true;
     },
@@ -628,9 +630,21 @@ export default {
         this.editedIndex = -1;
       });
     },
-
     save() {
-      console.log(this.editedItem);
+      // console.log("save");
+      // console.log("editedItem:", this.editedItem);
+      for(var index in this.flatObjs) {
+        var obj = this.flatObjs[index];
+        if(obj.id === this.editedItem.id) {
+          this.editedIndex = index;
+        }
+      }
+      // console.log("editedIndex:", this.editedIndex)
+      Object.entries(this.editedItem).forEach(
+        (k, v) => {
+          this.parameterUpdater.updateParam(this.editedIndex, k, v);
+        }
+      );
       if (this.editedIndex > -1) {
         Object.assign(this.flatObjs[this.editedIndex], this.editedItem);
       } else {
