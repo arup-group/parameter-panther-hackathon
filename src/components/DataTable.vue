@@ -183,10 +183,11 @@
           </v-dialog>
         </v-toolbar>
       </template>
-      <!-- <template v-slot:[`item.actions`]="{ item }">
-        <v-icon small class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
-        <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
-      </template> -->
+      <template v-slot:[`item.actions`]="{ item }">
+        <v-icon small class="mr-2" @click="editItem(item)">
+        mdi-pencil
+        </v-icon>
+      </template>
     </v-data-table>
 
     <v-btn
@@ -302,12 +303,12 @@ export default {
     },
     headers() {
       let tmp = [
-        // {
-        //   text: "Action",
-        //   align: "start",
-        //   sortable: false,
-        //   value: "action",
-        // },
+        {
+          text: 'Edit',
+          align: "start",
+          sortable: false,
+          value: 'actions',
+        },
         {
           text: "ElementId",
           align: "start",
@@ -353,7 +354,6 @@ export default {
           // },
         },
       ];
-
       this.uniqueHeaderNames.forEach((val) => {
         if (val) {
           tmp.push({
@@ -364,6 +364,12 @@ export default {
           });
         }
       });
+        tmp.push({
+          text: "Id",
+          align: "start",
+          sortable: true,
+          value: "id",
+        });
       return tmp;
     },
   },
@@ -480,6 +486,7 @@ export default {
           (k) =>
             !k.includes("__closure") &&
             !k.includes("type") &&
+            !k.includes("id") &&
             !k.includes("family") &&
             !k.includes("elementId") &&
             !k.includes("category") &&
