@@ -284,17 +284,18 @@ export default {
           }, {});
 
         this.editedItem = filteredFields;
-        this.editableFields = Object.keys(filteredFields);
+        // this.editableFields = Object.keys(filteredFields);
+        this.editableFields = this.uniqueHeaderNames;
       }
     },
   },
   computed: {
     filters() {
       let tmp = {
-        elementId: [],
-        family: [],
-        type: [],
-        level: [],
+        // elementId: [],
+        // family: [],
+        // type: [],
+        // level: [],
       };
       // this.uniqueHeaderNames.forEach((val) => tmp.push({
       //   val: [],
@@ -561,8 +562,8 @@ export default {
         return obj.id === item.id;
       });
       this.editedIndex = this.flatObjs.indexOf(matchingItem);
-      console.log(this.editedIndex);
-      // this.editedItem = Object.assign({}, item);
+      this.editedItem = Object.assign({}, item);
+      this.editableFields = this.uniqueHeaderNames;
       this.dialog = true;
     },
     deleteItem(item) {
