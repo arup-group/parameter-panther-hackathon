@@ -491,34 +491,6 @@ export default {
 
       console.log("flatObjs:", this.flatObjs);
 
-      // this.flatObjs.forEach((o) => {
-      //   Object.keys(o).forEach(
-      //     (k) =>
-      //       !k.includes("__closure") &&
-      //       !k.includes("type") &&
-      //       !k.includes("id") &&
-      //       !k.includes("family") &&
-      //       !k.includes("elementId") &&
-      //       !k.includes("category") &&
-      //       (k.startsWith("parameters") &&
-      //           !k.endsWith("applicationUnit") &&
-      //           !k.endsWith("applicationUnitType") &&
-      //           !k.endsWith("applicationId") &&
-      //           !k.endsWith("id") &&
-      //           !k.endsWith("totalChildrenCount") &&
-      //           !k.endsWith("units") &&
-      //           !k.endsWith("speckle_type") &&
-      //           !k.endsWith("isShared") &&
-      //           !k.endsWith("isReadOnly") &&
-      //           !k.endsWith("isTypeParameter") &&
-      //           !k.endsWith("applicationInternalName") &&
-      //           !k.endsWith("name"))
-      //         ? this.uniqueHeaderNames.add(k)
-      //         : null //clean up this filtering!
-      //   );
-      // });
-
-
       let ids = [];
 
       for(var index in this.flatObjs) {
