@@ -37,19 +37,27 @@
       Total count: {{ totalCount ? totalCount : "unknown" }}
     </p>
 
-    <v-card-title>
-      Revit Instance Parameters
-    </v-card-title>
+    <v-card-title> Revit Instance Parameters </v-card-title>
     <v-autocomplete
       v-model="selectedInstanceParameters"
       :items="instanceParameters"
-      :item-text="(item) => item.replace('parameters.', '').replace('.value','')"
-      :item-value="(item) => item"
       label="Instance parameters"
       @input="fetchInstanceParameters"
       multiple
-    ></v-autocomplete>
-    <!-- replace("parameters.", "").replace(".value","") -->
+    >
+      <template slot="selection" slot-scope="data">
+        <v-chip :selected="data.selected" class="chip--select">
+          {{ data.item.replace("parameters.", "").replace(".value", "") }}
+        </v-chip>
+      </template>
+      <template slot="item" slot-scope="data">
+        <v-list-tile-content>
+          <v-list-tile-title
+            v-html="data.item.replace('parameters.', '').replace('.value', '')"
+          ></v-list-tile-title>
+        </v-list-tile-content>
+      </template>
+    </v-autocomplete>
     <v-card-title>
       Search:
       <v-spacer></v-spacer>
@@ -507,7 +515,6 @@ export default {
       // this.instanceParameters = [...this.uniqueHeaderNames].map(header => header.replace("parameters.", "").replace(".value",""));
       this.instanceParameters = [...this.uniqueHeaderNames];
 
-      
       this.initFilters();
       this.totalCount = this.flatObjs.length;
 
@@ -517,9 +524,11 @@ export default {
       // const parameterUpdater = new ParameterUpdater(streamId);
       this.parameterUpdater.addObjects(this.flatObjs);
     },
-    fetchInstanceParameters(){
-    let filteredHeaders = this.instanceParameters.filter(header => this.selectedInstanceParameters.includes(header));
-    this.uniqueHeaderNames = new Set(filteredHeaders);
+    fetchInstanceParameters() {
+      let filteredHeaders = this.instanceParameters.filter((header) =>
+        this.selectedInstanceParameters.includes(header)
+      );
+      this.uniqueHeaderNames = new Set(filteredHeaders);
     },
     initFilters() {
       for (let col in this.filters) {
