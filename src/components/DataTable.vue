@@ -313,6 +313,17 @@ export default {
         this.editableFields = this.uniqueHeaderNames;
       }
     },
+    activeFilters: {
+      handler() {
+        console.log("changedActiveFlag");
+        this.rendererFilter = {
+        filterBy: { __parents: { includes: this.getIds() } },
+        ghostOthers: true,
+      };
+      this.$emit("applyFilter", this.rendererFilter);
+     },
+     deep: true
+    },
   },
   computed: {
     commitObjectsDisabled() {
@@ -647,6 +658,11 @@ export default {
       console.log("clearAll");
       console.log(col);
       this.activeFilters[col] = [];
+      this.rendererFilter = {
+        filterBy: { __parents: { includes: [] } },
+        ghostOthers: true,
+      };
+      this.$emit("applyFilter", this.rendererFilter);
     },
     editItem(item) {
       // console.log("editItem()");
