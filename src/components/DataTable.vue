@@ -8,48 +8,21 @@
         v-model.number="limit"
         type="number"
       ></v-text-field>
-      <v-card-text class="pl-0"
-        >Categories:
-        <v-chip
-          v-for="c in categories"
-          :key="c"
-          v-model="categories"
-          @input="onClose(tag)"
-          close=""
-          >
-          {{ c }}
-        </v-chip>
-      </v-card-text>
-      <v-card-text class="pl-0"
-        >Families:
-        <v-chip
-          v-for="f in families"
-          :key="f"
-          v-model="families"
-          @input="onClose(tag)"
-          close
-          >{{ f }}
-        </v-chip>
-      </v-card-text>
-      <v-card-text class="pl-0"
-        >Types:
-        <v-chip
-          v-for="t in types"
-          :key="t"
-          v-model="types"
-          @input="onClose(tag)"
-          close
-          >{{ t }}
-        </v-chip>
-      </v-card-text>
-
       <v-btn
+        class="mb-6"
         elevation="2"
         color="primary"
         :loading="fetchLoading && !prevLoading && !nextLoading"
-        @click="fetchChildren"
-        >Fetch</v-btn
-      >
+        @click="fetchCategories"
+        >Fetch
+      </v-btn>
+      <v-autocomplete
+        v-model="selectedCategory"
+        :items="categories"
+        label="Categories"
+        @input="fetchCategoryObjects"
+        dense
+      />
     </div>
 
     <p class="caption">
@@ -104,6 +77,7 @@
 
 <script>
 import flat from "flat";
+import { objectQuery } from "@/queries";
 
 import { ParameterUpdater } from "@/utils/ParameterUpdater";
 
@@ -115,13 +89,13 @@ export default {
       url: "https://v2.speckle.arup.com/streams/465e7157fe/objects/2976ed34ee720713a6fe18b50c5aad71",
       totalCount: null,
       parameterUpdater: new ParameterUpdater(""),
-      categories: ["None"],
-      families: ["None"],
-      types: ["None"],
-      query:
-        '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
+      categories: [],
+      objects: [],
+      selectedCategory: null,
       // select:
       //   '["speckle_type","id", "elementId", "category", "family", "type", "parameters.HOST_AREA_COMPUTED.value", "parameters.HOST_VOLUME_COMPUTED.value"]',
+      query:
+        '[{"field":"speckle_type","operator":"!=","value":"Speckle.Core.Models.DataChunk","field":"category","operator":"!=","value":"","field":"elementId","operator":"!=","value":""}]',
       cursors: [],
       fieldsToShow: [
         "speckle_type",
@@ -132,6 +106,7 @@ export default {
         "type",
       ],
       flatObjs: [],
+      filteredFlatObjs: [],
       headers: [],
       limit: 10,
       fetchLoading: false,
@@ -143,19 +118,19 @@ export default {
   watch: {
     limit() {
       // If the limit is changed, we need to reset the query
-      this.fetchChildren();
+      if (this.selectedCategory) this.fetchCategories();
     },
   },
   methods: {
     async next() {
       this.nextLoading = true;
-      await this.fetchChildren(false, this.cursors[this.cursors.length - 1]);
+      await this.fetchCategories(false, this.cursors[this.cursors.length - 1]);
       this.nextLoading = false;
     },
     async prev() {
       this.prevLoading = true;
       await this.cursors.pop(); // remove last cursor
-      await this.fetchChildren(
+      await this.fetchCategories(
         false,
         this.cursors[this.cursors.length - 2],
         false
@@ -163,15 +138,14 @@ export default {
       this.prevLoading = false;
     },
     paramUpdateTest() {
-      this.parameterUpdater.updateParam("001e4a317dff1b69fbaff7ed0a63fde5", "cfef2a72708bd4ba727715d8c14991d0", "THIS IS A NEW VALUE");
+      this.parameterUpdater.updateParam(
+        "001e4a317dff1b69fbaff7ed0a63fde5",
+        "cfef2a72708bd4ba727715d8c14991d0",
+        "THIS IS A NEW VALUE"
+      );
       console.log(this.parameterUpdater);
     },
-
-    async fetchChildren(
-      cleanCursor = true,
-      cursor = null,
-      appendCursor = true
-    ) {
+    async fetchCategories() {
       // Parse the object's url and extract the info we need from it.
       const url = new URL(this.url);
       const server = url.origin;
@@ -180,27 +154,14 @@ export default {
       this.parameterUpdater.streamid = streamId;
 
       // Get the gql query string.
-      const query = this.getQuery(streamId, objectId, cursor);
+      const query = objectQuery(streamId, objectId);
 
       // Set loading status
       this.fetchLoading = true;
 
       // Send the request to the Speckle graphql endpoint.
       // Note: The limit, selection and query clause are passed in as variables.
-      let rawRes = await fetch(new URL("/graphql", server), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: {
-            limit: this.limit,
-            mySelect: this.select ? JSON.parse(this.select) : null,
-            myQuery: this.query ? JSON.parse(this.query) : null,
-          },
-        }),
-      });
+      let rawRes = await this.fetchFromApi(query, null, server);
 
       // Parse the response into.
       let res = await rawRes.json();
@@ -209,73 +170,87 @@ export default {
 
       let obj = res.data.stream.object;
 
-      this.totalCount = obj.children.totalCount;
-
-      // Cursor management.
-      if (cleanCursor) this.cursors = [null];
-      if (appendCursor) this.cursors.push(obj.children.cursor);
-
-      // Flatten the objects!
-      this.flatObjs = obj.children.objects.map((o) =>
-        flat(o.data, { safe: false })
+      this.objects = obj.data;
+      let tempCategories = Object.keys(this.objects).filter((cat) =>
+        cat.startsWith("@")
       );
-      
-      const uniqueCategories = new Set();
-      const uniqueFamilies = new Set();
-      const uniqueTypes = new Set();
-      this.flatObjs.forEach((o) => {
-        if(o.category) uniqueCategories.add(o.category);
-        if(o.family) uniqueFamilies.add(o.family);
-        if(o.type) uniqueTypes.add(o.type);
-      });
+      this.categories = tempCategories
+        .map((cat) => cat.slice(1))
+        .filter((c) => !c.startsWith("<"))
+        .sort();
 
-      this.categories = Array.from(uniqueCategories)
-      this.families = Array.from(uniqueFamilies)
-      this.types = Array.from(uniqueTypes)
+      // Last, signal that we're done loading!
+      this.fetchLoading = false;
+    },
+    async fetchFromApi(query, variables, server) {
+      return await fetch(new URL("/graphql", server), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: variables,
+        }),
+      });
+    },
+    async fetchCategoryObjects(category) {
+      // Set loading status
+      this.fetchLoading = true;
+
+      this.flatObjs = [];
+      this.selectedCategory = category;
+
+      let objs = this.objects[`@${category}`];
+      let referencedIds = objs.map((o) => o["referencedId"]);
+
+      const url = new URL(this.url);
+      const server = url.origin;
+      const streamId = url.pathname.split("/")[2];
+
+      for (const objectId of referencedIds) {
+        let query = objectQuery(streamId, objectId);
+
+        let variables = {
+          limit: this.limit,
+          mySelect: this.select ? JSON.parse(this.select) : null,
+          myQuery: this.query ? JSON.parse(this.query) : null,
+        };
+
+        let rawRes = await this.fetchFromApi(query, variables, server);
+
+        // Parse the response into.
+        let res = await rawRes.json();
+
+        let obj = res.data.stream.object;
+
+        // Flatten the object!
+        let flatObj = flat(obj.data, { safe: false });
+        this.flatObjs.push(flatObj);
+      }
 
       // Create a unique list of all the headers.
       const uniqueHeaderNames = new Set();
-      this.flatObjs.forEach((o) =>
+      this.flatObjs.forEach((o) => {
+        console.log(o);
         Object.keys(o).forEach(
           (k) =>
             !k.includes("__closure") &&
             (this.fieldsToShow.includes(k) || k.startsWith("parameter"))
               ? uniqueHeaderNames.add(k)
               : null //clean up this filtering!
-        )
-      );
+        );
+      });
 
       this.headers = [];
       uniqueHeaderNames.forEach((val) =>
         this.headers.push({ text: val, value: val, sortable: true })
       );
 
+      this.totalCount = this.filteredFlatObjs.length;
+
       // Last, signal that we're done loading!
       this.fetchLoading = false;
-    },
-
-    getQuery(streamId, objectId, cursor = null) {
-      return `
-        query( $limit: Int, $mySelect: [String!], $myQuery: [JSONObject!]) {
-          stream( id: "${streamId}" ) {
-            object( id: "${objectId}" ) {
-              children( 
-                limit: $limit
-                depth: 100
-                select: $mySelect
-                query: $myQuery
-                ${cursor ? ', cursor:"' + cursor + '"' : ""}
-                ) {
-                cursor
-                objects {
-                  id
-                  data
-                }
-              }
-            }
-          }
-        }
-      `;
     },
   },
 };
