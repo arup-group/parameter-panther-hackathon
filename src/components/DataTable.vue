@@ -578,12 +578,13 @@ export default {
               let isTypeParameterKey = k.replace("value", "isTypeParameter");
               let nameKey = k.replace("value", "name");
               let applicationInternalNameKey = k.replace("value", "applicationInternalName");
+              let unitKey = k.replace("value", "unit");
 
               let isReadOnly = o[isReadOnlyKey];
               let isTypeParameter = o[isTypeParameterKey];
               let name = o[nameKey];
               let applicationInternalName = o[applicationInternalNameKey];
-              let units = o["units"];
+              let unit = o[unitKey];
         
               if(!isReadOnly && !isTypeParameter) {
                 // console.log("isReadOnly:", isReadOnly);
@@ -592,8 +593,8 @@ export default {
                 // console.log("kept:", k);
 
                 let instanceParameterName = name + " | " + applicationInternalName;
-                if(units) {
-                  instanceParameterName = instanceParameterName + " [" + units + "]";
+                if(unit) {
+                  instanceParameterName = instanceParameterName + " [" + unit + "]";
                 }
                   this.instanceParameters.push(instanceParameterName);
               }
