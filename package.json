@@ -11,7 +11,7 @@
     "@speckle/viewer": "2.5.5",
     "core-js": "^3.8.3",
     "flat": "^5.0.2",
-    "graphql": "^16.5.0",
+    "graphql": "^16.8.1",
     "graphql-tag": "^2.12.6",
     "lodash.throttle": "^4.1.1",
     "v-tooltip": "^2.1.3",
